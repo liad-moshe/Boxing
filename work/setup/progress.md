@@ -54,7 +54,7 @@ when it is pasted, so this file never guesses at future work.
 
 ## Carry-overs (open)
 - [ ] Switch all 3 projects to net10.0 once an export with net10.0 succeeds (local templates or CI); update ADR-0001 table
-- [ ] Client machine: Godot editor Indent Type = Spaces (else headless runs rewrite game/scripts/Main.cs with tabs)
+- [x] Client machine: Godot editor Indent Type = Spaces (set 2026-11-21, verified: import leaves Main.cs unchanged) (else headless runs rewrite game/scripts/Main.cs with tabs)
 
 ## Stage 3
 - [ ] (sub-items added when the Stage 3 prompt is pasted)
