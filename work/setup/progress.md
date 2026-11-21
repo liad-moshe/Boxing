@@ -46,7 +46,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 4. tests/Core.Tests (xUnit, 3 RoundClock tests)
 - [x] 5. project.godot by hand + `godot --headless --import --path .` clean
 - [x] 6. game/scenes/Main.tscn + game/scripts/Main.cs
-- [ ] 7. game/scenes/smoke/Smoke.tscn + Smoke.cs
+- [x] 7. game/scenes/smoke/Smoke.tscn + Smoke.cs
 - [ ] 8. Local checks pass + docs/process/commands.md (+ SETUP.md §6 smoke line)
 - [ ] 9. export_presets.cfg ("Windows Desktop") + local export or CI note
 - [ ] 10. docs/licenses/godot-LICENSE.txt
