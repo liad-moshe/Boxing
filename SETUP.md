@@ -19,6 +19,9 @@ Everything shared lives in this repo. This page sets up the machine-only parts. 
 3. Add that folder to PATH. Restart any open terminals and the Claude app.
 4. `godot --version` must print `4.7.2.stable.mono…`. If it says `official` without `mono`, an older
    non-.NET Godot comes first on PATH.
+5. Open the Godot editor once. In **Editor → Editor Settings → Text Editor → Behavior → Indent**, set
+   **Type: Spaces** and **Size: 4**. Otherwise headless editor runs rewrite C# files with tabs
+   (docs/process/commands.md, "Known noise").
 
 **Optional IDE:** VS Code with the base C# extension, or Visual Studio Community. JetBrains Rider is free
 only for non-commercial use.
@@ -90,6 +93,8 @@ There is no `.env`. No secrets are needed.
 1. claude                 → starts in the repo, Producer on sonnet
 2. /agents                → lists game-designer, boxing-consultant, developer, qa, kb-keeper, tech-artist
 3. /inbox                 → shows what is waiting for you (may be empty)
-4. dotnet test            → all tests pass
-5. headless smoke         → exact command added in Stage 2; must exit 0
+4. dotnet test tests/Core.Tests                                  → all tests pass
+5. godot --headless --path . --build-solutions --quit
+   godot --headless --path . res://game/scenes/smoke/Smoke.tscn  → prints "SMOKE: PASS", exit 0
 ```
+All commands and their pass criteria: docs/process/commands.md.
