@@ -53,7 +53,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 11. docs/kb entries for Main (quit action, Main scene)
 
 ## Carry-overs (open)
-- [ ] Switch all 3 projects to net10.0 once an export with net10.0 succeeds (local templates or CI); update ADR-0001 table
+- [ ] Switch all 3 projects to net10.0 once an export with net10.0 succeeds (local templates or CI); update ADR-0001 table — CI export now works (net8.0, 2026-11-21), so CI can prove net10.0
 - [x] Client machine: Godot editor Indent Type = Spaces (set 2026-11-21, verified: import leaves Main.cs unchanged) (else headless runs rewrite game/scripts/Main.cs with tabs)
 
 ## Stage 3 — Claude Code environment
@@ -72,8 +72,8 @@ when it is pasted, so this file never guesses at future work.
 - [x] 2. .github/workflows/release.yml (playtest-N prerelease, keep newest 5)
 - [x] 3. Commit + push (full gh login with workflow scope)
 - [x] 4. PR #1 setup/agentic-env → main "Agentic studio environment (setup)" (CLIENT BRIEFING body)
-- [ ] 5. CI green for build-test + kb-check (client-approval explained)
-- [ ] 6. Artifact downloaded: Boxing.exe + data folder + license verified
+- [x] 5. CI green: build-test, kb-check, governance, client-approval all pass (run 44948729756; client-approval passed without waiting: environment auto-created with no reviewer until Stage 5)
+- [x] 6. Artifact Boxing-windows-37036af.zip verified: Boxing.exe (PE32+ GUI), Boxing.pck, data_Boxing_windows_x86_64/ (187 files incl. Boxing.dll, Boxing.Core.dll, GodotSharp.dll, self-contained net8.0 runtime), godot-LICENSE.txt
 
 ## Stage 5
 - [ ] (sub-items added when the Stage 5 prompt is pasted)
