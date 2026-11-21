@@ -44,7 +44,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 2. Boxing.csproj (Godot.NET.Sdk/4.7.2, excludes src/** tests/**, refs Core) + TargetFramework in ADR-0001
 - [x] 3. src/Core/Boxing.Core.csproj + RoundClock + .gdignore in src/ and tests/
 - [x] 4. tests/Core.Tests (xUnit, 3 RoundClock tests)
-- [ ] 5. project.godot by hand + `godot --headless --import --path .` clean
+- [x] 5. project.godot by hand + `godot --headless --import --path .` clean
 - [ ] 6. game/scenes/Main.tscn + game/scripts/Main.cs
 - [ ] 7. game/scenes/smoke/Smoke.tscn + Smoke.cs
 - [ ] 8. Local checks pass + docs/process/commands.md (+ SETUP.md §6 smoke line)
