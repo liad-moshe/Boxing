@@ -43,7 +43,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 1. Root files: global.json, Directory.Build.props, Directory.Packages.props, Boxing.sln
 - [x] 2. Boxing.csproj (Godot.NET.Sdk/4.7.2, excludes src/** tests/**, refs Core) + TargetFramework in ADR-0001
 - [x] 3. src/Core/Boxing.Core.csproj + RoundClock + .gdignore in src/ and tests/
-- [ ] 4. tests/Core.Tests (xUnit, 3 RoundClock tests)
+- [x] 4. tests/Core.Tests (xUnit, 3 RoundClock tests)
 - [ ] 5. project.godot by hand + `godot --headless --import --path .` clean
 - [ ] 6. game/scenes/Main.tscn + game/scripts/Main.cs
 - [ ] 7. game/scenes/smoke/Smoke.tscn + Smoke.cs
