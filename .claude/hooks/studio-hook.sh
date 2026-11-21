@@ -27,9 +27,11 @@
 #       the path starts with one of the prefixes (a prefix ending in "/" is a folder; otherwise an exact
 #       file). Protected paths and paths outside the project are always denied.
 #   session-context
-#       SessionStart. Prints at most 25 lines that Claude Code adds to the session context: a warning if
-#       the session's model (the optional "model" field) is not Sonnet, branch, last commit, task log/plan
-#       or setup progress, open PRs, and a hint about /resume-task and /inbox.
+#       SessionStart. Prints at most 25 lines that Claude Code adds to the session context: branch, last
+#       commit, task log/plan or setup progress, open PRs, and a hint about /resume-task and /inbox.
+#       If the session's model is not Sonnet (from the optional "model" field, else the --model flag of
+#       the parent claude process, as the desktop app omits the field), it prints JSON instead: a
+#       systemMessage warning for the client plus the same text as additionalContext for the Producer.
 #   build-gate
 #       Stop hook of the developer agent (runs as SubagentStop). Runs
 #       `dotnet build Boxing.sln -warnaserror -nologo -v q`. On failure: last 40 lines to stderr, exit 2
@@ -288,15 +290,52 @@ CANDEOF
   block "$rel is outside this agent's write paths ($*)"
 }
 
+# The model of the session that runs this hook: the SessionStart "model" field if present; else the
+# --model flag of the claude process that started us (the desktop app launches sessions that way and
+# omits the field); else $ANTHROPIC_MODEL; else empty (unknown). Read-only, best effort, at most ~5s.
+detect_model() {
+  json_get model && [ -n "$JV" ] && { printf '%s' "$JV"; return; }
+  local m="" pid i args pp
+  if [ -r "/proc/$$/winpid" ] && command -v powershell.exe >/dev/null 2>&1; then
+    # Git Bash hides Windows parents between its own processes: climb its /proc ppid chain to the
+    # topmost Git Bash process first, then follow the Windows parent chain from there.
+    pid=$$
+    while [ -r "/proc/$pid/ppid" ]; do
+      pp="$(cat "/proc/$pid/ppid")"
+      { [ "$pp" -le 1 ] 2>/dev/null || [ ! -r "/proc/$pp/winpid" ]; } && break
+      pid="$pp"
+    done
+    m="$(run_timeout 5 powershell.exe -NoProfile -NonInteractive -Command "\$p = Get-CimInstance Win32_Process -Filter \"ProcessId=$(cat "/proc/$pid/winpid")\"; for (\$i = 0; \$i -lt 10 -and \$p; \$i++) { \$x = [regex]::Match([string]\$p.CommandLine, '--model[= ]+([^ \"]+)'); if (\$x.Success) { \$x.Groups[1].Value; break }; \$p = Get-CimInstance Win32_Process -Filter (\"ProcessId=\" + \$p.ParentProcessId) }" 2>/dev/null | tr -d '\r')"
+  elif command -v ps >/dev/null 2>&1; then
+    pid="$PPID"; i=0
+    while [ -n "$pid" ] && [ "$pid" -gt 1 ] 2>/dev/null && [ $i -lt 10 ]; do
+      args="$(ps -o args= -p "$pid" 2>/dev/null)"
+      if [[ $args =~ --model[=[:space:]]+([^[:space:]]+) ]]; then m="${BASH_REMATCH[1]}"; break; fi
+      pid="$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')"; i=$((i + 1))
+    done
+  fi
+  [ -z "$m" ] && m="${ANTHROPIC_MODEL:-}"
+  printf '%s' "$m"
+}
+
+# JSON string body (without quotes) for $1.
+json_escape() {
+  local s
+  s="$(printf '%s' "$1" | tr -d '\000-\010\013\014\016-\037')"
+  s="${s//\\/\\\\}"; s="${s//\"/\\\"}"; s="${s//$'\t'/\\t}"; s="${s//$'\r'/}"; s="${s//$'\n'/\\n}"
+  printf '%s' "$s"
+}
+
 session_context() {
   set_project_dir
   cd "$PD" 2>/dev/null || true
-  local branch n
+  local branch n model warn="" ctx
   # The Producer must run on Sonnet. The desktop app's model picker outranks .claude/settings.json.
-  if json_get model && [ -n "$JV" ] && ! has_i "sonnet" "$JV"; then
-    echo "⚠ MODEL WARNING: this session runs on $JV, but the Producer should run on Sonnet. Tell the client first: in the desktop app pick Sonnet in the model picker for new sessions, or run /model sonnet now."
+  model="$(detect_model)"
+  if [ -n "$model" ] && ! has_i "sonnet" "$model"; then
+    warn="⚠ MODEL WARNING: this session runs on $model, but the Producer should run on Sonnet. In the desktop app pick Sonnet in the model picker (it can be changed mid-session), or run /model sonnet."
   fi
-  {
+  ctx="$({
     branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
     echo "Branch: $branch | Last commit: $(git log -1 --format='%h %s' 2>/dev/null | cut -c1-100)"
     case "$branch" in
@@ -313,8 +352,17 @@ session_context() {
     esac
     echo "Open PRs:"
     run_timeout 10 gh pr list --state open --limit 5 2>/dev/null || echo "(gh pr list unavailable)"
-  } 2>/dev/null | head -n 23
-  echo "Run /resume-task to continue, /inbox for client to-dos."
+  } 2>/dev/null | head -n 23)"
+  ctx="$ctx
+Run /resume-task to continue, /inbox for client to-dos."
+  if [ -z "$warn" ]; then
+    printf '%s\n' "$ctx"
+  else
+    # JSON so the client sees the warning directly (systemMessage) and the Producer gets it as context.
+    printf '{"systemMessage":"%s","hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' \
+      "$(json_escape "$warn")" "$(json_escape "$warn Tell the client this first.
+$ctx")"
+  fi
   exit 0
 }
 
