@@ -52,6 +52,10 @@ when it is pasted, so this file never guesses at future work.
 - [x] 10. docs/licenses/godot-LICENSE.txt
 - [x] 11. docs/kb entries for Main (quit action, Main scene)
 
+## Carry-overs (open)
+- [ ] Switch all 3 projects to net10.0 once an export with net10.0 succeeds (local templates or CI); update ADR-0001 table
+- [ ] Client machine: Godot editor Indent Type = Spaces (else headless runs rewrite game/scripts/Main.cs with tabs)
+
 ## Stage 3
 - [ ] (sub-items added when the Stage 3 prompt is pasted)
 
