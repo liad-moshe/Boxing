@@ -37,7 +37,7 @@ when it is pasted, so this file never guesses at future work.
   - [x] docs/licenses/README.md
 - [x] 6. CLAUDE.md (Producer manual, < 150 lines)
 - [x] 7. SETUP.md
-- [ ] 8. README.md overview
+- [x] 8. README.md overview
 
 ## Stage 2
 - [ ] (sub-items added when the Stage 2 prompt is pasted)
