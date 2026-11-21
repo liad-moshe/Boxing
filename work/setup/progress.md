@@ -59,7 +59,7 @@ when it is pasted, so this file never guesses at future work.
 ## Stage 3 — Claude Code environment
 - [x] 0. Read official docs: sub-agents, skills, hooks, settings, permissions (+ commands for name clashes)
 - [x] A. .claude/hooks/studio-hook.sh (bash-guard, path-guard, session-context, build-gate) + ≥20-case test table
-- [ ] B. .claude/agents/*.md (7 agents: frontmatter per spec §3, path-guard hooks, developer build-gate)
+- [x] B. .claude/agents/*.md (6 agent files: frontmatter per spec §3, path-guard hooks, developer build-gate)
 - [ ] C. .claude/skills/*/SKILL.md (task, resume, inbox, ship, plan-milestone, playtest-feedback,
       godot-csharp-api, boxing-sources, kb-update)
 - [ ] D. .claude/settings.json + .claude/settings.local.example.json
