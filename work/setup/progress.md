@@ -21,7 +21,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 1. Branch setup/agentic-env + this progress file (pushed with -u)
 - [x] 2. docs/process/environment-spec.md (MASTER CONTEXT verbatim)
 - [x] 3. .gitignore
-- [ ] 4. .gitattributes
+- [x] 4. .gitattributes
 - [ ] 5. Docs skeletons
   - [ ] docs/vision.md (DRAFT)
   - [ ] docs/roadmap.md (M1, M2, M1 skips)
