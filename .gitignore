@@ -1,0 +1,25 @@
+# Godot 4 editor cache (regenerated). Do NOT ignore *.import files: Godot 4 needs them committed.
+.godot/
+# Godot 3 leftover (harmless)
+.import/
+
+# .NET build output
+bin/
+obj/
+build/
+export/
+TestResults/
+*.user
+
+# IDEs (keep the recommended-extensions file)
+.vs/
+.vscode/*
+!.vscode/extensions.json
+
+# Machine-only Claude Code files
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Secrets never belong in this repo
+.env
+*.pat

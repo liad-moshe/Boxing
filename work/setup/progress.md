@@ -20,7 +20,7 @@ when it is pasted, so this file never guesses at future work.
 ## Stage 1 — Foundation files
 - [x] 1. Branch setup/agentic-env + this progress file (pushed with -u)
 - [x] 2. docs/process/environment-spec.md (MASTER CONTEXT verbatim)
-- [ ] 3. .gitignore
+- [x] 3. .gitignore
 - [ ] 4. .gitattributes
 - [ ] 5. Docs skeletons
   - [ ] docs/vision.md (DRAFT)
