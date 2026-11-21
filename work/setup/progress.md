@@ -39,10 +39,18 @@ when it is pasted, so this file never guesses at future work.
 - [x] 7. SETUP.md
 - [x] 8. README.md overview
 
-## Stage 2
-- [ ] (sub-items added when the Stage 2 prompt is pasted)
-- Known carry-over: TargetFramework decision for ADR-0001 (net8.0 vs net10.0)
-- Known carry-over: fill in the headless smoke command in SETUP.md §6 (first-run check, line 5)
+## Stage 2 — Engine skeleton
+- [x] 1. Root files: global.json, Directory.Build.props, Directory.Packages.props, Boxing.sln
+- [ ] 2. Boxing.csproj (Godot.NET.Sdk/4.7.2, excludes src/** tests/**, refs Core) + TargetFramework in ADR-0001
+- [ ] 3. src/Core/Boxing.Core.csproj + RoundClock + .gdignore in src/ and tests/
+- [ ] 4. tests/Core.Tests (xUnit, 3 RoundClock tests)
+- [ ] 5. project.godot by hand + `godot --headless --import --path .` clean
+- [ ] 6. game/scenes/Main.tscn + game/scripts/Main.cs
+- [ ] 7. game/scenes/smoke/Smoke.tscn + Smoke.cs
+- [ ] 8. Local checks pass + docs/process/commands.md (+ SETUP.md §6 smoke line)
+- [ ] 9. export_presets.cfg ("Windows Desktop") + local export or CI note
+- [ ] 10. docs/licenses/godot-LICENSE.txt
+- [ ] 11. docs/kb entries for Main (quit action, Main scene)
 
 ## Stage 3
 - [ ] (sub-items added when the Stage 3 prompt is pasted)
