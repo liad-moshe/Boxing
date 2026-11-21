@@ -63,7 +63,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] C. .claude/skills/*/SKILL.md (task, resume-task [renamed from "resume": built-in /resume clash, client chose 2026-11-21], inbox, ship, plan-milestone, playtest-feedback,
       godot-csharp-api, boxing-sources, kb-update)
 - [x] D. .claude/settings.json + .claude/settings.local.example.json
-- [ ] E. Verification table (agent → name → model → tools → maxTurns vs spec §3) + skills list
+- [x] E. Verification table (ALL PASS) (agent → name → model → tools → maxTurns vs spec §3) + skills list
 
 ## Stage 4
 - [ ] (sub-items added when the Stage 4 prompt is pasted)
