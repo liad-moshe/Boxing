@@ -22,19 +22,19 @@ when it is pasted, so this file never guesses at future work.
 - [x] 2. docs/process/environment-spec.md (MASTER CONTEXT verbatim)
 - [x] 3. .gitignore
 - [x] 4. .gitattributes
-- [ ] 5. Docs skeletons
+- [x] 5. Docs skeletons
   - [x] docs/vision.md (DRAFT)
   - [x] docs/roadmap.md (M1, M2, M1 skips)
   - [x] docs/process/workflow.md
   - [x] docs/process/routing.md
   - [x] docs/process/failure-playbook.md
   - [x] docs/process/gates.md
-  - [ ] docs/boxing/sources.md + docs/boxing/README.md
-  - [ ] docs/kb/feature-map.md, input-map.md, ui-map.md
-  - [ ] docs/specs/README.md (spec template)
-  - [ ] docs/decisions/README.md + ADR-0001-engine-and-versions.md
-  - [ ] docs/art/style-guide.md
-  - [ ] docs/licenses/README.md
+  - [x] docs/boxing/sources.md + docs/boxing/README.md
+  - [x] docs/kb/feature-map.md, input-map.md, ui-map.md
+  - [x] docs/specs/README.md (spec template)
+  - [x] docs/decisions/README.md + ADR-0001-engine-and-versions.md
+  - [x] docs/art/style-guide.md
+  - [x] docs/licenses/README.md
 - [ ] 6. CLAUDE.md (Producer manual, < 150 lines)
 - [ ] 7. SETUP.md
 - [ ] 8. README.md overview
