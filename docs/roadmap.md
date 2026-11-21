@@ -14,7 +14,9 @@ Goal: one complete, playable sparring round that proves the core loop is fun.
 - **Decision**: KO (the opponent's health is depleted) or a points decision when time runs out.
 - **Keyboard controls** (the key map lives in docs/kb/input-map.md once it exists in project.godot).
 - **Menu**: Start, Quit and Licenses (the engine license notice, see docs/licenses/README.md).
-- **Opponent AI**: a simple state machine (for example: approach, attack, defend, recover).
+- **Opponent AI**: a simple state machine (for example: approach, attack, defend, recover), tuned
+  **forgiving** by default (client decision, docs/vision.md).
+- **Camera**: side-on, like a classic fighting game (client decision, docs/vision.md).
 
 ## M2 — "Look & Feel"
 Goal: make M1 look and sound good. This brings in the tech-artist role.

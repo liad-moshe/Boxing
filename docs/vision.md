@@ -25,6 +25,11 @@ boxing to start, and real boxing knowledge pays off.
 - Licensed boxers, real venues, career mode, online multiplayer.
 - Photorealism. Being readable matters more than looking real.
 
+## Client decisions
+- 2026-11-21 — **Camera: side-on**, like a classic fighting game. Both boxers stay in view, which keeps
+  distance and timing readable (pillar 1).
+- 2026-11-21 — **Default difficulty: forgiving.** New players should get to read the opponent and learn
+  the fundamentals before being punished for mistakes.
+
 ## Open questions for the client
-- Camera: side-on like a classic fighting game, or behind the boxer?
-- Default difficulty: forgiving or punishing?
+- None right now.
