@@ -48,7 +48,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 6. game/scenes/Main.tscn + game/scripts/Main.cs
 - [x] 7. game/scenes/smoke/Smoke.tscn + Smoke.cs
 - [x] 8. Local checks pass + docs/process/commands.md (+ SETUP.md §6 smoke line)
-- [ ] 9. export_presets.cfg ("Windows Desktop") + local export or CI note
+- [x] 9. export_presets.cfg ("Windows Desktop") — templates not installed locally; preset validated (fails only on missing templates); CI proves export
 - [ ] 10. docs/licenses/godot-LICENSE.txt
 - [ ] 11. docs/kb entries for Main (quit action, Main scene)
 
