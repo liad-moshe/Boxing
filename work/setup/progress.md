@@ -42,6 +42,7 @@ when it is pasted, so this file never guesses at future work.
 ## Stage 2
 - [ ] (sub-items added when the Stage 2 prompt is pasted)
 - Known carry-over: TargetFramework decision for ADR-0001 (net8.0 vs net10.0)
+- Known carry-over: fill in the headless smoke command in SETUP.md §6 (first-run check, line 5)
 
 ## Stage 3
 - [ ] (sub-items added when the Stage 3 prompt is pasted)
