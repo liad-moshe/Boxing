@@ -62,7 +62,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] B. .claude/agents/*.md (6 agent files: frontmatter per spec §3, path-guard hooks, developer build-gate)
 - [x] C. .claude/skills/*/SKILL.md (task, resume-task [renamed from "resume": built-in /resume clash, client chose 2026-11-21], inbox, ship, plan-milestone, playtest-feedback,
       godot-csharp-api, boxing-sources, kb-update)
-- [ ] D. .claude/settings.json + .claude/settings.local.example.json
+- [x] D. .claude/settings.json + .claude/settings.local.example.json
 - [ ] E. Verification table (agent → name → model → tools → maxTurns vs spec §3) + skills list
 
 ## Stage 4
