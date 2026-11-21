@@ -1,0 +1,131 @@
+# Publishes a playtest prerelease for every merge to main (and on manual dispatch).
+# The build and export steps duplicate ci.yml's build-test on purpose: no shared scripts or composite
+# actions, because files outside .github/workflows are writable by the agent PAT.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Read Godot version from global.json
+        id: godot
+        run: |
+          v="$(sed -n -E 's/.*"Godot\.NET\.Sdk"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' global.json | head -n 1)"
+          if [ -z "$v" ]; then echo "::error file=global.json::msbuild-sdks Godot.NET.Sdk version not found"; exit 1; fi
+          echo "Godot version: $v"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Godot ${{ steps.godot.outputs.version }} (.NET + export templates)
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ steps.godot.outputs.version }}
+          use-dotnet: true
+          include-templates: true
+
+      - name: Restore
+        run: dotnet restore Boxing.sln
+
+      - name: Build (warnings as errors)
+        run: dotnet build Boxing.sln -warnaserror --no-restore
+
+      - name: Test
+        run: dotnet test tests/Core.Tests --no-build
+
+      - name: Godot import
+        run: godot --headless --path . --import
+
+      - name: Godot build-solutions
+        run: godot --headless --path . --build-solutions --quit
+
+      - name: Headless smoke test
+        run: |
+          set +e
+          out="$(timeout 300 godot --headless --path . res://game/scenes/smoke/Smoke.tscn 2>&1)"
+          code=$?
+          set -e
+          echo "$out"
+          if [ "$code" -ne 0 ]; then echo "::error::Smoke exited with code $code"; exit 1; fi
+          if ! grep -q 'SMOKE: PASS' <<<"$out"; then echo "::error::Smoke did not print SMOKE: PASS"; exit 1; fi
+          if grep -E -q 'ERROR|SCRIPT ERROR|Unhandled exception' <<<"$out"; then echo "::error::Smoke output contains an error line"; exit 1; fi
+
+      - name: Export Windows Desktop
+        run: |
+          mkdir -p build/windows
+          godot --headless --path . --export-release "Windows Desktop" build/windows/Boxing.exe
+          test -f build/windows/Boxing.exe || { echo "::error::Export did not produce build/windows/Boxing.exe"; exit 1; }
+          ls -la build/windows
+
+      - name: Package zip
+        id: pkg
+        run: |
+          cp docs/licenses/godot-LICENSE.txt build/windows/
+          zip_name="Boxing-windows-${GITHUB_SHA:0:7}.zip"
+          (cd build/windows && zip -r -q "../../$zip_name" .)
+          unzip -l "$zip_name"
+          echo "zip=$zip_name" >> "$GITHUB_OUTPUT"
+
+      - name: Create playtest prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: playtest-${{ github.run_number }}
+          ZIP: ${{ steps.pkg.outputs.zip }}
+        run: |
+          # The merged PR's title + link go into the notes via a file, never inline in the script.
+          pr_json="$(gh pr list --repo "$REPO" --state merged --search "$GITHUB_SHA" --json number,title,url --limit 1 || echo '[]')"
+          {
+            echo "Playtest build for commit ${GITHUB_SHA:0:7}."
+            echo
+            if [ "$pr_json" != "[]" ] && [ -n "$pr_json" ]; then
+              printf '%s' "$pr_json" | jq -r '.[0] | "Merged PR #\(.number): \(.title)\n\n\(.url)"'
+            else
+              echo "No merged PR found for this commit (manual run or direct push)."
+            fi
+            echo
+            echo "Download $ZIP, unzip it and run Boxing.exe."
+          } > release-notes.md
+          cat release-notes.md
+          gh release create "$TAG" "$ZIP" --repo "$REPO" --prerelease --target "$GITHUB_SHA" \
+            --title "$TAG" --notes-file release-notes.md
+
+      - name: Keep only the newest 5 playtest prereleases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          old="$(gh release list --repo "$REPO" --limit 200 --json tagName,isPrerelease,createdAt \
+            | jq -r '[.[] | select(.isPrerelease and (.tagName | startswith("playtest-")))] | sort_by(.createdAt) | reverse | .[5:] | .[].tagName')"
+          for t in $old; do
+            echo "Deleting old prerelease $t"
+            gh release delete "$t" --repo "$REPO" --yes --cleanup-tag
+          done
+          echo "Done. Kept the newest 5 playtest prereleases."

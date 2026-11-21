@@ -69,7 +69,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 0. Action versions checked (gh release view) + setup-godot action.yml read at its tag
 - [x] 0b. docs/decisions/ADR-0002-ci-versions.md
 - [x] 1. .github/workflows/ci.yml (build-test, kb-check, governance, client-approval)
-- [ ] 2. .github/workflows/release.yml (playtest-N prerelease, keep newest 5)
+- [x] 2. .github/workflows/release.yml (playtest-N prerelease, keep newest 5)
 - [ ] 3. Commit + push (full gh login with workflow scope)
 - [ ] 4. PR setup/agentic-env → main "Agentic studio environment (setup)" (CLIENT BRIEFING body)
 - [ ] 5. CI green for build-test + kb-check (client-approval explained)
