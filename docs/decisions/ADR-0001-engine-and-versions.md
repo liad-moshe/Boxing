@@ -1,6 +1,6 @@
 # ADR-0001: Engine, language and pinned versions
 
-- Status: Accepted (TargetFramework: TBD in Stage 2)
+- Status: Accepted. TargetFramework: net8.0 for now; switch to net10.0 once an export is proven (see below).
 - Date: 2026-11-21
 
 ## Context
@@ -37,14 +37,35 @@ Use **Godot 4.7.2 (.NET build) with C#**.
 | Godot C# SDK | `Godot.NET.Sdk/4.7.2` | global.json "msbuild-sdks" + project file |
 | .NET SDK | 10.0.202, rollForward `latestFeature` | global.json "sdk" |
 | NuGet packages | latest stable at setup time, exact versions | Directory.Packages.props (Central Package Management) |
-| TargetFramework | **TBD in Stage 2** | project files |
+| TargetFramework | **net8.0** (for now; see below) | Boxing.csproj, src/Core, tests/Core.Tests |
+| xunit / xunit.runner.visualstudio / Microsoft.NET.Test.Sdk | 2.9.3 / 4.0.1 / 18.12.0 | Directory.Packages.props |
 
-### TargetFramework: open question for Stage 2
-- The default is `net8.0`, the Godot 4.7 default.
-- We switch to `net10.0` only if the official Godot 4.7 docs **and** a successful local build plus export
-  prove that it works.
-- .NET 8 support ended on 2026-11-10, before this ADR was written. Staying on net8.0 means running on an
-  unsupported runtime. That raises the priority of proving net10.0 in Stage 2.
+### TargetFramework decision (Stage 2, 2026-11-21)
+The rule: stay on `net8.0`, the Godot 4.7 default, unless the official Godot 4.7 docs **and** a successful
+local build **and** export prove `net10.0` works.
+
+Evidence collected:
+| Check | net8.0 | net10.0 |
+|---|---|---|
+| Godot 4.7 docs, C# basics page: ".NET 8 or later" (Android export needs .NET 9+) | ✅ | ✅ allowed |
+| GodotSharp 4.7.2 package targets | net8.0 | net8.0 (usable from net10.0) |
+| `dotnet build Boxing.sln -warnaserror` | ✅ 0 warnings | ✅ 0 warnings |
+| `dotnet test tests/Core.Tests` | ✅ 3/3 | ✅ 3/3 |
+| `godot --headless --path . --build-solutions --quit` | ✅ | ✅ |
+| Headless smoke (Godot loads the assembly; runtimeconfig tfm checked) | ✅ PASS | ✅ PASS (runtimeconfig `net10.0`) |
+| `--export-release "Windows Desktop"` | not run locally | not run locally |
+
+No export templates are installed on the setup machine, so the export has not been proven for either
+framework yet.
+
+**Decision:** keep `net8.0` until an export with `net10.0` succeeds, either locally (once export templates
+are installed) or in CI. Then switch all three projects to `net10.0` in one change and update this table.
+
+.NET 8 support ended on 2026-11-10, so net8.0 is a short bridge, not a resting place. The switch to net10.0
+is a tracked carry-over (work/setup/progress.md), not a someday item.
+
+Note: Godot.NET.Sdk 4.7.2 also ships an opt-in preview binding ("Godot .NET", `EnableGodotDotNetPreview`).
+We use the default, stable GodotSharp bindings.
 
 ## Consequences
 - Agents must use Godot 4.7 APIs only. They check against the exact-version GodotSharp.xml or
