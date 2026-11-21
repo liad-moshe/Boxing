@@ -93,7 +93,9 @@ There is no `.env`. No secrets are needed.
 - **Terminal (`claude`):** sessions get Sonnet automatically from `.claude/settings.json`.
 - **Claude desktop app (Code tab):** the app starts each session with the model picked in its picker,
   and that outranks settings.json. Pick **Sonnet** in the picker under the prompt box *before* the first
-  message of every new session.
+  message of every new session. If you forget, the session-start hook gives the Producer a
+  `⚠ MODEL WARNING`, and the Producer tells you to switch.
+- Subagents are not affected: each takes its model from its own `.claude/agents/*.md` file.
 
 ```
 1. claude (or a new Code session)  → opens in the repo; the session-start summary shows branch + open PRs

@@ -27,8 +27,9 @@
 #       the path starts with one of the prefixes (a prefix ending in "/" is a folder; otherwise an exact
 #       file). Protected paths and paths outside the project are always denied.
 #   session-context
-#       SessionStart. Prints at most 25 lines that Claude Code adds to the session context: branch, last
-#       commit, task log/plan or setup progress, open PRs, and a hint about /resume-task and /inbox.
+#       SessionStart. Prints at most 25 lines that Claude Code adds to the session context: a warning if
+#       the session's model (the optional "model" field) is not Sonnet, branch, last commit, task log/plan
+#       or setup progress, open PRs, and a hint about /resume-task and /inbox.
 #   build-gate
 #       Stop hook of the developer agent (runs as SubagentStop). Runs
 #       `dotnet build Boxing.sln -warnaserror -nologo -v q`. On failure: last 40 lines to stderr, exit 2
@@ -291,6 +292,10 @@ session_context() {
   set_project_dir
   cd "$PD" 2>/dev/null || true
   local branch n
+  # The Producer must run on Sonnet. The desktop app's model picker outranks .claude/settings.json.
+  if json_get model && [ -n "$JV" ] && ! has_i "sonnet" "$JV"; then
+    echo "⚠ MODEL WARNING: this session runs on $JV, but the Producer should run on Sonnet. Tell the client first: in the desktop app pick Sonnet in the model picker for new sessions, or run /model sonnet now."
+  fi
   {
     branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
     echo "Branch: $branch | Last commit: $(git log -1 --format='%h %s' 2>/dev/null | cut -c1-100)"
@@ -308,7 +313,7 @@ session_context() {
     esac
     echo "Open PRs:"
     run_timeout 10 gh pr list --state open --limit 5 2>/dev/null || echo "(gh pr list unavailable)"
-  } 2>/dev/null | head -n 24
+  } 2>/dev/null | head -n 23
   echo "Run /resume-task to continue, /inbox for client to-dos."
   exit 0
 }
