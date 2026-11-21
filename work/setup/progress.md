@@ -60,7 +60,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 0. Read official docs: sub-agents, skills, hooks, settings, permissions (+ commands for name clashes)
 - [x] A. .claude/hooks/studio-hook.sh (bash-guard, path-guard, session-context, build-gate) + ≥20-case test table
 - [x] B. .claude/agents/*.md (6 agent files: frontmatter per spec §3, path-guard hooks, developer build-gate)
-- [ ] C. .claude/skills/*/SKILL.md (task, resume, inbox, ship, plan-milestone, playtest-feedback,
+- [x] C. .claude/skills/*/SKILL.md (task, resume-task [renamed from "resume": built-in /resume clash, client chose 2026-11-21], inbox, ship, plan-milestone, playtest-feedback,
       godot-csharp-api, boxing-sources, kb-update)
 - [ ] D. .claude/settings.json + .claude/settings.local.example.json
 - [ ] E. Verification table (agent → name → model → tools → maxTurns vs spec §3) + skills list

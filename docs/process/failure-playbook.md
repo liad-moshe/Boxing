@@ -6,14 +6,18 @@ This file is protected: agents never edit it.
 ## Usage limit reached mid-task
 - **Why it's safe:** the checkpoint protocol commits and pushes after every role step (workflow.md), so
   at most one step is lost.
-- **Do:** wait for the limit to reset, open the same session again (`/resume`, or pick it in the sidebar)
-  and say "continue". The Producer re-reads work/<n>/brief.md, plan.md and log.md and picks up from the
-  first unticked item.
+- **Do:** wait for the limit to reset. Reopen the same conversation (the built-in `/resume`, or pick it
+  in the sidebar), then run **`/resume-task`**. The Producer re-reads work/<n>/brief.md, plan.md and log.md
+  and picks up from the first unticked item.
 
 ## Claude crashes or the machine restarts
-- **Why it's safe:** the same checkpoints apply. A SessionStart hook (added in a later stage) prints the
-  current branch and work/<n>/ status into the new session's context.
-- **Do:** `/resume` the session, or start a new one on the task branch and say "continue task <n>".
+- **Why it's safe:** the same checkpoints apply. A SessionStart hook prints the current branch, the last
+  commit, and the task's log/plan status into the new session's context.
+- **Do:** start `claude` in the repo, a new session or the old one via the built-in `/resume`, and run
+  **`/resume-task`**.
+
+> Two different commands: the built-in `/resume` reopens a past *conversation*. The studio skill
+> `/resume-task` continues a *task* from the files on its branch, and works even in a brand-new session.
 
 ## An agent is stuck or looping
 - **Why it's limited:** each agent file sets `maxTurns`, so a runaway agent stops by itself.

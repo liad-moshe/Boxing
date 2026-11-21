@@ -28,7 +28,7 @@
 #       file). Protected paths and paths outside the project are always denied.
 #   session-context
 #       SessionStart. Prints at most 25 lines that Claude Code adds to the session context: branch, last
-#       commit, task log/plan or setup progress, open PRs, and a hint about /resume and /inbox.
+#       commit, task log/plan or setup progress, open PRs, and a hint about /resume-task and /inbox.
 #   build-gate
 #       Stop hook of the developer agent (runs as SubagentStop). Runs
 #       `dotnet build Boxing.sln -warnaserror -nologo -v q`. On failure: last 40 lines to stderr, exit 2
@@ -309,7 +309,7 @@ session_context() {
     echo "Open PRs:"
     run_timeout 10 gh pr list --state open --limit 5 2>/dev/null || echo "(gh pr list unavailable)"
   } 2>/dev/null | head -n 24
-  echo "Run /resume to continue, /inbox for client to-dos."
+  echo "Run /resume-task to continue, /inbox for client to-dos."
   exit 0
 }
 
