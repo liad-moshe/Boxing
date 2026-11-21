@@ -89,10 +89,19 @@ git config --global user.email "<id>+liad-moshe@users.noreply.github.com"
 There is no `.env`. No secrets are needed.
 
 ## 6. First-run check
+**Model for the Producer:** the Producer runs on **Sonnet**.
+- **Terminal (`claude`):** sessions get Sonnet automatically from `.claude/settings.json`.
+- **Claude desktop app (Code tab):** the app starts each session with the model picked in its picker,
+  and that outranks settings.json. Pick **Sonnet** in the picker under the prompt box *before* the first
+  message of every new session.
+
 ```
-1. claude                 → starts in the repo, Producer on sonnet
-2. /agents                → lists game-designer, boxing-consultant, developer, qa, kb-keeper, tech-artist
-3. /inbox                 → shows what is waiting for you (may be empty)
+1. claude (or a new Code session)  → opens in the repo; the session-start summary shows branch + open PRs
+2. ask "which studio subagents are available?"
+                                   → game-designer, boxing-consultant, developer, qa, kb-keeper, tech-artist
+                                     (/agents no longer lists them: since Claude Code 2.1.198 it only
+                                     prints a reminder)
+3. /inbox                          → shows what is waiting for you (may be empty)
 4. dotnet test tests/Core.Tests                                  → all tests pass
 5. godot --headless --path . --build-solutions --quit
    godot --headless --path . res://game/scenes/smoke/Smoke.tscn  → prints "SMOKE: PASS", exit 0
