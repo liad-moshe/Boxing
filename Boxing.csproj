@@ -1,0 +1,21 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <!--
+    The Godot game assembly: thin node adapters in game/. Pure logic lives in src/Core (no Godot reference).
+    TargetFramework decision: docs/decisions/ADR-0001-engine-and-versions.md.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>Boxing</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Godot.NET.Sdk compiles every .cs under the project folder. src/ and tests/ are separate projects. -->
+  <ItemGroup>
+    <Compile Remove="src/**" />
+    <Compile Remove="tests/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="src/Core/Boxing.Core.csproj" />
+  </ItemGroup>
+</Project>
