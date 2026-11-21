@@ -36,7 +36,7 @@ when it is pasted, so this file never guesses at future work.
   - [x] docs/art/style-guide.md
   - [x] docs/licenses/README.md
 - [x] 6. CLAUDE.md (Producer manual, < 150 lines)
-- [ ] 7. SETUP.md
+- [x] 7. SETUP.md
 - [ ] 8. README.md overview
 
 ## Stage 2
