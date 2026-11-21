@@ -35,7 +35,7 @@ when it is pasted, so this file never guesses at future work.
   - [x] docs/decisions/README.md + ADR-0001-engine-and-versions.md
   - [x] docs/art/style-guide.md
   - [x] docs/licenses/README.md
-- [ ] 6. CLAUDE.md (Producer manual, < 150 lines)
+- [x] 6. CLAUDE.md (Producer manual, < 150 lines)
 - [ ] 7. SETUP.md
 - [ ] 8. README.md overview
 
