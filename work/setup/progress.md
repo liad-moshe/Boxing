@@ -23,12 +23,12 @@ when it is pasted, so this file never guesses at future work.
 - [x] 3. .gitignore
 - [x] 4. .gitattributes
 - [ ] 5. Docs skeletons
-  - [ ] docs/vision.md (DRAFT)
-  - [ ] docs/roadmap.md (M1, M2, M1 skips)
-  - [ ] docs/process/workflow.md
-  - [ ] docs/process/routing.md
-  - [ ] docs/process/failure-playbook.md
-  - [ ] docs/process/gates.md
+  - [x] docs/vision.md (DRAFT)
+  - [x] docs/roadmap.md (M1, M2, M1 skips)
+  - [x] docs/process/workflow.md
+  - [x] docs/process/routing.md
+  - [x] docs/process/failure-playbook.md
+  - [x] docs/process/gates.md
   - [ ] docs/boxing/sources.md + docs/boxing/README.md
   - [ ] docs/kb/feature-map.md, input-map.md, ui-map.md
   - [ ] docs/specs/README.md (spec template)
