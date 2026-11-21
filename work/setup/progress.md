@@ -50,7 +50,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 8. Local checks pass + docs/process/commands.md (+ SETUP.md §6 smoke line)
 - [x] 9. export_presets.cfg ("Windows Desktop") — templates not installed locally; preset validated (fails only on missing templates); CI proves export
 - [x] 10. docs/licenses/godot-LICENSE.txt
-- [ ] 11. docs/kb entries for Main (quit action, Main scene)
+- [x] 11. docs/kb entries for Main (quit action, Main scene)
 
 ## Stage 3
 - [ ] (sub-items added when the Stage 3 prompt is pasted)

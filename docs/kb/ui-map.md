@@ -5,3 +5,4 @@ Maintained by kb-keeper. No line numbers; backticked repo paths must exist (CI k
 
 | Screen | Control | Signal/event | Handler (`path` + `Type.Member`) | Effect |
 |---|---|---|---|---|
+| Main (3D view, no UI controls yet) | — (keyboard only) | ui_quit_game action (InputEvent) | `game/scripts/Main.cs` + `Main._UnhandledInput` | Quits the game |
