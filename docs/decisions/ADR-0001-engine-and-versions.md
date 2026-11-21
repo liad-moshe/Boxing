@@ -1,6 +1,6 @@
 # ADR-0001: Engine, language and pinned versions
 
-- Status: Accepted. TargetFramework: net8.0 for now; switch to net10.0 once an export is proven (see below).
+- Status: Accepted. TargetFramework: **net10.0** (proven by a CI export on 2026-11-21, see below).
 - Date: 2026-11-21
 
 ## Context
@@ -37,7 +37,7 @@ Use **Godot 4.7.2 (.NET build) with C#**.
 | Godot C# SDK | `Godot.NET.Sdk/4.7.2` | global.json "msbuild-sdks" + project file |
 | .NET SDK | 10.0.202, rollForward `latestFeature` | global.json "sdk" |
 | NuGet packages | latest stable at setup time, exact versions | Directory.Packages.props (Central Package Management) |
-| TargetFramework | **net8.0** (for now; see below) | Boxing.csproj, src/Core, tests/Core.Tests |
+| TargetFramework | **net10.0** (see below) | Boxing.csproj, src/Core, tests/Core.Tests |
 | xunit / xunit.runner.visualstudio / Microsoft.NET.Test.Sdk | 2.9.3 / 4.0.1 / 18.12.0 | Directory.Packages.props |
 
 ### TargetFramework decision (Stage 2, 2026-11-21)
@@ -53,16 +53,17 @@ Evidence collected:
 | `dotnet test tests/Core.Tests` | ✅ 3/3 | ✅ 3/3 |
 | `godot --headless --path . --build-solutions --quit` | ✅ | ✅ |
 | Headless smoke (Godot loads the assembly; runtimeconfig tfm checked) | ✅ PASS | ✅ PASS (runtimeconfig `net10.0`) |
-| `--export-release "Windows Desktop"` | not run locally | not run locally |
+| `--export-release "Windows Desktop"` (CI, ubuntu-24.04, templates 4.7.2) | ✅ run 44948729756 | ✅ run 44953758554 |
+| Exported zip runtime | .NET 8 (self-contained) | `Microsoft.NETCore.App.Runtime.win-x64` **10.0.15**, runtimeconfig tfm `net10.0`, 192 files in `data_Boxing_windows_x86_64/` |
 
-No export templates are installed on the setup machine, so the export has not been proven for either
-framework yet.
+The setup machine has no export templates, so CI proved the export for both frameworks (2026-11-21).
 
-**Decision:** keep `net8.0` until an export with `net10.0` succeeds, either locally (once export templates
-are installed) or in CI. Then switch all three projects to `net10.0` in one change and update this table.
+**Decision:** all three projects target **`net10.0`**. The rule's three conditions are met: the Godot 4.7
+docs allow ".NET 8 or later", the local build/tests/smoke pass, and the CI Windows export passes. .NET 8
+support ended on 2026-11-10. .NET 10 is the current LTS release, supported until about November 2028.
 
-.NET 8 support ended on 2026-11-10, so net8.0 is a short bridge, not a resting place. The switch to net10.0
-is a tracked carry-over (work/setup/progress.md), not a someday item.
+**If a future Godot or .NET update breaks net10.0:** go back to `net8.0` in the three project files (a
+3-line change) and record why in a new ADR.
 
 Note: Godot.NET.Sdk 4.7.2 also ships an opt-in preview binding ("Godot .NET", `EnableGodotDotNetPreview`).
 We use the default, stable GodotSharp bindings.

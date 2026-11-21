@@ -53,7 +53,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 11. docs/kb entries for Main (quit action, Main scene)
 
 ## Carry-overs (open)
-- [ ] Switch all 3 projects to net10.0 once an export with net10.0 succeeds (local templates or CI); update ADR-0001 table — CI export now works (net8.0, 2026-11-21), so CI can prove net10.0
+- [x] Switched all 3 projects to net10.0 (2026-11-21): CI run 44953758554 green incl. Windows export; zip bundles .NET runtime 10.0.15; ADR-0001 updated
 - [x] Client machine: Godot editor Indent Type = Spaces (set 2026-11-21, verified: import leaves Main.cs unchanged) (else headless runs rewrite game/scripts/Main.cs with tabs)
 
 ## Stage 3 — Claude Code environment
