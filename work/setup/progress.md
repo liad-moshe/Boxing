@@ -81,9 +81,9 @@ when it is pasted, so this file never guesses at future work.
 - [x] 3. Actions settings (default workflow permissions read; fork-PR approval for all external contributors) — applied and re-read
 - [x] 4. Environment client-approval (reviewer liad-moshe, prevent_self_review false, can_admins_bypass false) — reviewer via API; admin bypass unticked by the client in the UI (field not in the REST docs); re-read OK
 - [x] 5. GitHub Actions app id read from a check run on the PR head: 15368 (github-actions), commit 7ea333b
-- [ ] 6. Ruleset protect-main (no bypass; deletion, non_fast_forward, PR squash-only, strict required checks)
-- [ ] 7. PR checks re-run; client-approval shows "Waiting for review"
-- [ ] 8. docs/process/github-settings.md
+- [x] 6. Ruleset protect-main (no bypass; deletion, non_fast_forward, PR squash-only, strict required checks) — id 28200762, active
+- [x] 7. PR checks re-ran (push 8400364, run 45912170910): client-approval waiting for review (reviewer liad-moshe); PR merge state BLOCKED
+- [x] 8. docs/process/github-settings.md
 
 ## Stage 6
 - [ ] (sub-items added when the Stage 6 prompt is pasted)
