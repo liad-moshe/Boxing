@@ -77,7 +77,7 @@ when it is pasted, so this file never guesses at future work.
 
 ## Stage 5 — GitHub settings (each change shown first, applied only after the client's "yes")
 - [x] 1. Labels (17, gh label create --force) — created and verified
-- [ ] 2. Repo merge settings (squash only, delete branch on merge, no auto-merge)
+- [x] 2. Repo merge settings (squash only, delete branch on merge, no auto-merge) — applied and re-read
 - [ ] 3. Actions settings (default workflow permissions read; fork-PR approval for all external contributors)
 - [ ] 4. Environment client-approval (reviewer liad-moshe, prevent_self_review false, can_admins_bypass false)
 - [x] 5. GitHub Actions app id read from a check run on the PR head: 15368 (github-actions), commit 7ea333b
