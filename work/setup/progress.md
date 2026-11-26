@@ -75,8 +75,15 @@ when it is pasted, so this file never guesses at future work.
 - [x] 5. CI green: build-test, kb-check, governance, client-approval all pass (run 44948729756; client-approval passed without waiting: environment auto-created with no reviewer until Stage 5)
 - [x] 6. Artifact Boxing-windows-37036af.zip verified: Boxing.exe (PE32+ GUI), Boxing.pck, data_Boxing_windows_x86_64/ (187 files incl. Boxing.dll, Boxing.Core.dll, GodotSharp.dll, self-contained net8.0 runtime), godot-LICENSE.txt
 
-## Stage 5
-- [ ] (sub-items added when the Stage 5 prompt is pasted)
+## Stage 5 — GitHub settings (each change shown first, applied only after the client's "yes")
+- [ ] 1. Labels (17, gh label create --force)
+- [ ] 2. Repo merge settings (squash only, delete branch on merge, no auto-merge)
+- [ ] 3. Actions settings (default workflow permissions read; fork-PR approval for all external contributors)
+- [ ] 4. Environment client-approval (reviewer liad-moshe, prevent_self_review false, can_admins_bypass false)
+- [x] 5. GitHub Actions app id read from a check run on the PR head: 15368 (github-actions), commit 7ea333b
+- [ ] 6. Ruleset protect-main (no bypass; deletion, non_fast_forward, PR squash-only, strict required checks)
+- [ ] 7. PR checks re-run; client-approval shows "Waiting for review"
+- [ ] 8. docs/process/github-settings.md
 
 ## Stage 6
 - [ ] (sub-items added when the Stage 6 prompt is pasted)
