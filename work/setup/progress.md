@@ -79,7 +79,7 @@ when it is pasted, so this file never guesses at future work.
 - [x] 1. Labels (17, gh label create --force) — created and verified
 - [x] 2. Repo merge settings (squash only, delete branch on merge, no auto-merge) — applied and re-read
 - [x] 3. Actions settings (default workflow permissions read; fork-PR approval for all external contributors) — applied and re-read
-- [ ] 4. Environment client-approval (reviewer liad-moshe, prevent_self_review false, can_admins_bypass false)
+- [x] 4. Environment client-approval (reviewer liad-moshe, prevent_self_review false, can_admins_bypass false) — reviewer via API; admin bypass unticked by the client in the UI (field not in the REST docs); re-read OK
 - [x] 5. GitHub Actions app id read from a check run on the PR head: 15368 (github-actions), commit 7ea333b
 - [ ] 6. Ruleset protect-main (no bypass; deletion, non_fast_forward, PR squash-only, strict required checks)
 - [ ] 7. PR checks re-run; client-approval shows "Waiting for review"
