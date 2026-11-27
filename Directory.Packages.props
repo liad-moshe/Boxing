@@ -1,0 +1,16 @@
+<Project>
+  <!--
+    Central Package Management: every NuGet version is pinned here, exactly, and nowhere else.
+    Versions = latest stable on nuget.org, checked 2026-11-21.
+    The Godot packages (GodotSharp, Godot.SourceGenerators) are referenced implicitly by Godot.NET.Sdk/4.7.2
+    and are pinned by global.json, not here.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
+  </ItemGroup>
+</Project>

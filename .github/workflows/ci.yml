@@ -1,0 +1,208 @@
+# CI for every pull request to main. Required checks: build-test, kb-check, client-approval.
+# All logic stays in this file on purpose: files outside .github/workflows are writable by the agent PAT.
+# Versions: docs/decisions/ADR-0002-ci-versions.md. Commands: docs/process/commands.md.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: build-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Read Godot version from global.json
+        id: godot
+        run: |
+          v="$(sed -n -E 's/.*"Godot\.NET\.Sdk"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' global.json | head -n 1)"
+          if [ -z "$v" ]; then echo "::error file=global.json::msbuild-sdks Godot.NET.Sdk version not found"; exit 1; fi
+          echo "Godot version: $v"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Godot ${{ steps.godot.outputs.version }} (.NET + export templates)
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ steps.godot.outputs.version }}
+          use-dotnet: true
+          include-templates: true
+
+      - name: Restore
+        run: dotnet restore Boxing.sln
+
+      - name: Build (warnings as errors)
+        run: dotnet build Boxing.sln -warnaserror --no-restore
+
+      - name: Test
+        run: dotnet test tests/Core.Tests --no-build --logger "trx;LogFileName=core-tests.trx" --results-directory TestResults
+
+      - name: Upload test results (TRX)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: TestResults/*.trx
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: API drift scan (no Godot 3 APIs)
+        run: |
+          pattern='\bSpatial\b|KinematicBody|\.Translation\b|Godot\.Object\b|OS\.GetTicksMsec|Engine\.EditorHint|\[Remote\]|\[Puppet\]'
+          if hits="$(grep -rnE --include='*.cs' "$pattern" src game)"; then
+            echo "$hits"
+            echo "::error::Godot 3 API names found in src/ or game/ (see the godot-csharp-api skill for the 4.x names)"
+            exit 1
+          fi
+          echo "No Godot 3 API names found."
+
+      - name: Godot import
+        run: godot --headless --path . --import
+
+      - name: Godot build-solutions
+        run: godot --headless --path . --build-solutions --quit
+
+      - name: Headless smoke test
+        run: |
+          set +e
+          out="$(timeout 300 godot --headless --path . res://game/scenes/smoke/Smoke.tscn 2>&1)"
+          code=$?
+          set -e
+          echo "$out"
+          if [ "$code" -ne 0 ]; then echo "::error::Smoke exited with code $code"; exit 1; fi
+          if ! grep -q 'SMOKE: PASS' <<<"$out"; then echo "::error::Smoke did not print SMOKE: PASS"; exit 1; fi
+          if grep -E -q 'ERROR|SCRIPT ERROR|Unhandled exception' <<<"$out"; then echo "::error::Smoke output contains an error line"; exit 1; fi
+
+      - name: Export Windows Desktop
+        run: |
+          mkdir -p build/windows
+          godot --headless --path . --export-release "Windows Desktop" build/windows/Boxing.exe
+          test -f build/windows/Boxing.exe || { echo "::error::Export did not produce build/windows/Boxing.exe"; exit 1; }
+          ls -la build/windows
+
+      - name: Package zip
+        id: pkg
+        run: |
+          cp docs/licenses/godot-LICENSE.txt build/windows/
+          zip_name="Boxing-windows-${HEAD_SHA:0:7}.zip"
+          (cd build/windows && zip -r -q "../../$zip_name" .)
+          unzip -l "$zip_name"
+          echo "zip=$zip_name" >> "$GITHUB_OUTPUT"
+
+      - name: Upload playtest build
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.pkg.outputs.zip }}
+          archive: false
+          retention-days: 14
+          if-no-files-found: error
+
+  kb-check:
+    name: kb-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check docs/kb against the repo
+        run: |
+          fail=0
+          echo "== (a) backticked repo paths in docs/kb/*.md must exist"
+          paths="$(grep -ohE '`[^`]+`' docs/kb/*.md | tr -d '`' | grep -vE '[[:space:]]|://' \
+            | grep -E '/|\.(cs|tscn|tres|godot|gdshader|csproj|sln|json|cfg|md|txt)$' | sort -u)"
+          for p in $paths; do
+            if [ -e "$p" ]; then echo "ok       $p"; else echo "::error file=docs/kb::kb-check: backticked path does not exist: $p"; fail=1; fi
+          done
+          echo "== (b) every project.godot [input] action must be in docs/kb/input-map.md"
+          actions="$(awk '/^\[input\]/{f=1; next} /^\[/{f=0} f && /^[A-Za-z0-9_]+=/{sub(/=.*/, ""); print}' project.godot)"
+          for a in $actions; do
+            if grep -qE "^\|[[:space:]]*${a}[[:space:]]*\|" docs/kb/input-map.md; then echo "ok       $a"
+            else echo "::error file=docs/kb/input-map.md::kb-check: InputMap action '$a' (project.godot) is missing from docs/kb/input-map.md"; fail=1; fi
+          done
+          if [ "$fail" -ne 0 ]; then echo "kb-check FAILED. Update docs/kb (kb-keeper) so it matches the code."; exit 1; fi
+          echo "kb-check passed."
+
+  governance:
+    name: governance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    continue-on-error: true
+    permissions:
+      pull-requests: write
+    steps:
+      # No checkout: this job never runs PR code. It only lists the PR's changed files via the API.
+      - name: Flag protected-path changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set +e
+          files="$(gh pr diff "$PR" --repo "$REPO" --name-only)"
+          if [ $? -ne 0 ]; then
+            echo "::warning::Could not list the PR's files."
+            echo "Governance: could not list the PR's files." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          hits="$(printf '%s\n' "$files" | grep -E '^(\.claude/|\.github/|CLAUDE\.md$|docs/process/|global\.json$|\.gitignore$|\.gitattributes$)')"
+          if [ -z "$hits" ]; then
+            echo "No protected paths changed."
+            echo "Governance: no protected paths changed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "⚠ GOVERNANCE CHANGE — this PR changes protected paths:"
+            echo
+            printf '%s\n' "$hits" | sed 's/^/- `/; s/$/`/'
+            echo
+            echo "These files define the studio's rules, agents, hooks, CI or pinned versions. Agents may not edit them."
+            echo "Client: review these files yourself before approving (docs/process/gates.md)."
+          } > governance-comment.md
+          cat governance-comment.md
+          cat governance-comment.md >> "$GITHUB_STEP_SUMMARY"
+          gh pr comment "$PR" --repo "$REPO" --edit-last --body-file governance-comment.md 2>/dev/null \
+            || gh pr comment "$PR" --repo "$REPO" --body-file governance-comment.md \
+            || echo "::warning::Could not post the governance comment."
+          exit 0
+
+  client-approval:
+    name: client-approval
+    needs: [build-test, kb-check]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: client-approval
+    permissions: {}
+    steps:
+      # No checkout, no repo code: this job only records that the client approved this exact commit.
+      - name: Record client approval
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          echo "Client approved $HEAD_SHA"
+          echo "PR: $PR_URL"
+          echo "Client approved \`$HEAD_SHA\` — $PR_URL" >> "$GITHUB_STEP_SUMMARY"

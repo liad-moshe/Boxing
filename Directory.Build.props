@@ -1,0 +1,10 @@
+<Project>
+  <!-- Applies to every project in the repo. The compiler is the oracle (environment-spec.md §8). -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Obsolete APIs (CS0618 with message, CS0612 without) are always errors, even if a project relaxes the rule above. -->
+    <WarningsAsErrors>$(WarningsAsErrors);CS0618;CS0612</WarningsAsErrors>
+  </PropertyGroup>
+</Project>
