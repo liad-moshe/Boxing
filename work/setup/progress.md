@@ -100,5 +100,17 @@ when it is pasted, so this file never guesses at future work.
 - [ ] 5. Client, in their own PowerShell window: fine-grained PAT → gh auth logout / login --with-token /
       setup-git / status → remove git:https://github.com from Credential Manager → restart claude → STAGE 7
 
-## Stage 7
-- [ ] (sub-items added when the Stage 7 prompt is pasted)
+## Stage 7 — Verification (results in work/setup/verification.md)
+- [ ] A1. Agent/model table from .claude/agents/*.md + settings.json model vs spec §3
+- [ ] A2. `gh auth status` shows fine-grained token (+ client confirms permissions in GitHub UI)
+- [ ] B3. Edit .claude/settings.json → denied
+- [ ] B4. `echo test >> CLAUDE.md` → hook block
+- [ ] B5. `git push origin HEAD:main` → hook/deny block
+- [ ] B6. `gh api user` → blocked
+- [ ] B7. qa subagent: `gh pr list` → guard block; write src/x.cs → path-guard block; git status clean
+- [ ] B8. developer subagent on scratch/build-gate: [Obsolete] call in Main.cs → build-gate forces fix or BLOCKED; branch deleted
+- [ ] C9–C13. Client runs server-side tests in own terminal; results recorded
+- [ ] D. Portability grep (abs paths, "tzone", tokens) + git check-ignore for local files
+- [ ] E1. Table → PR body (CLIENT BRIEFING); delete work/setup/ in final commit; push
+- [ ] E2. Client: approve client-approval, squash-merge, release playtest-1, run Boxing.exe
+- [ ] E3. Portability-test checklist as last PR comment
