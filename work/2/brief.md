@@ -16,3 +16,6 @@ G2 (spec OK), G3 (playtest), G4 (client merges). G1 not needed: classification i
 none
 ## Constraints
 Milestone 1 scope; no external assets (no fonts/images/sounds; default theme + code-built styling only); likely touches game/ (menu scene/script), src/Core (selection logic + tests), project.godot (main scene, input actions). Label note: all labels existed.
+
+## Exceptions
+- 2026-11-27: Producer edited project.godot at the client's explicit request (developer path guard blocks it).
