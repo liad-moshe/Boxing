@@ -6,3 +6,4 @@
 - 2026-11-27 producer: applied project.godot edit (client approved 'Go ahead'; exception to Producer write rule) — main scene Menu, ui_back, menu_up/down/confirm
 - 2026-11-27 qa: PASS — 0 defects; kb-check pending kb-keeper
 - 2026-11-27 kb-keeper: DONE — input-map, ui-map, feature-map updated
+- 2026-11-27 developer: DONE — code-review fixes (stale-hover guard, ScenePaths, cached styleboxes, dead Quit branch, vacuous test removed); build 0 warn, 16 tests, smoke PASS

@@ -46,15 +46,6 @@ public class MenuSelectionTests
         Assert.Equal(0, s.SelectedIndex);
     }
 
-    [Fact]
-    public void MouseLeave_MakesNoCall_IndexStays()
-    {
-        var s = new MenuSelection(2);
-        s.Hover(1);
-        // Mouse leave deliberately has no API: the adapter makes no selection call.
-        Assert.Equal(1, s.SelectedIndex);
-    }
-
     [Theory]
     [InlineData(-1)]
     [InlineData(2)]

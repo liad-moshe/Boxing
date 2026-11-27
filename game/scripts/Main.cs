@@ -11,7 +11,6 @@ public partial class Main : Node3D
 {
     public const double RoundSeconds = 180;
 
-    private const string MenuScenePath = "res://game/scenes/Menu.tscn";
     private static readonly StringName BackAction = "ui_back";
 
     private bool _leaving;
@@ -62,13 +61,10 @@ public partial class Main : Node3D
 
         GetViewport().SetInputAsHandled();
         _leaving = true;
+        // From the ring ScreenFlow only ever answers GoToMenu (Escape never quits from here).
         if (ScreenFlow.OnBack(Screen.Ring) == BackResult.GoToMenu)
         {
-            GetTree().ChangeSceneToFile(MenuScenePath);
-        }
-        else
-        {
-            GetTree().Quit();
+            GetTree().ChangeSceneToFile(ScenePaths.Menu);
         }
     }
 }

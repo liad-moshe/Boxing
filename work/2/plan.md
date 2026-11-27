@@ -7,3 +7,4 @@
 - [x] 5. Main.cs: Escape (no echo) -> ScreenFlow.OnBack(Ring) -> change scene to menu, leaving guard (AC18-AC20)
 - [x] 6. Smoke: also load the menu scene headless and assert it builds (optional extension)
 - [x] 7. Run the four checks from docs/process/commands.md
+- [x] 8. Review fixes: ignore synthetic MouseEntered until real mouse motion, ScenePaths class, cached styleboxes, removed vacuous test, dead Quit branch

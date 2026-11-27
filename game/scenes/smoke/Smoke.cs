@@ -9,7 +9,7 @@ namespace Boxing.Game.Smoke;
 /// </summary>
 public partial class Smoke : Node
 {
-    private const string MainScenePath = "res://game/scenes/Main.tscn";
+    private const string MainScenePath = ScenePaths.Ring;
     private const int FramesToRun = 120;
 
     private Node? _main;
@@ -27,7 +27,7 @@ public partial class Smoke : Node
                 return;
             }
 
-            var menuScene = GD.Load<PackedScene>("res://game/scenes/Menu.tscn");
+            var menuScene = GD.Load<PackedScene>(ScenePaths.Menu);
             if (menuScene is null)
             {
                 Fail("could not load Menu.tscn");

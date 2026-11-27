@@ -9,14 +9,13 @@ namespace Boxing.Game;
 /// </summary>
 public partial class Menu : Control
 {
-    public const string RingScenePath = "res://game/scenes/Main.tscn";
-
     private static readonly StringName UpAction = "menu_up";
     private static readonly StringName DownAction = "menu_down";
     private static readonly StringName ConfirmAction = "menu_confirm";
     private static readonly StringName BackAction = "ui_back";
 
     private static readonly string[] Labels = { "New Game", "Exit" };
+    private static readonly string[] FontColorNames = { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" };
 
     private static readonly Color BackgroundColor = new(0.08f, 0.10f, 0.14f);
     private static readonly Color TitleColor = new(0.92f, 0.92f, 0.95f);
@@ -33,7 +32,11 @@ public partial class Menu : Control
 
     private readonly MenuSelection _selection = new(Labels.Length);
     private readonly Button[] _buttons = new Button[Labels.Length];
+    private readonly StyleBoxFlat _normalBox = MakeBox(NormalFill, false);
+    private readonly StyleBoxFlat _selectedBox = MakeBox(SelectedFill, true);
+    private readonly StyleBoxFlat _selectedPressedBox = MakeBox(SelectedPressedFill, true);
     private bool _leaving;
+    private bool _mouseMoved;
 
     public override void _Ready()
     {
@@ -115,9 +118,18 @@ public partial class Menu : Control
         }
     }
 
+    public override void _Input(InputEvent @event)
+    {
+        if (@event is InputEventMouseMotion)
+        {
+            _mouseMoved = true;
+        }
+    }
+
     private void OnHover(int index)
     {
-        if (_leaving)
+        // Ignore synthetic MouseEntered (cursor resting over a button after a scene change).
+        if (_leaving || !_mouseMoved)
         {
             return;
         }
@@ -138,7 +150,7 @@ public partial class Menu : Control
         _leaving = true;
         if (index == 0)
         {
-            GetTree().ChangeSceneToFile(RingScenePath);
+            GetTree().ChangeSceneToFile(ScenePaths.Ring);
         }
         else
         {
@@ -154,16 +166,16 @@ public partial class Menu : Control
         }
     }
 
-    private static void ApplyStyle(Button button, bool selected)
+    private void ApplyStyle(Button button, bool selected)
     {
-        var normal = MakeBox(selected ? SelectedFill : NormalFill, selected);
-        var pressed = MakeBox(selected ? SelectedPressedFill : NormalFill, selected);
+        var normal = selected ? _selectedBox : _normalBox;
+        var pressed = selected ? _selectedPressedBox : _normalBox;
         button.AddThemeStyleboxOverride("normal", normal);
         button.AddThemeStyleboxOverride("hover", normal);
         button.AddThemeStyleboxOverride("pressed", pressed);
         button.AddThemeStyleboxOverride("focus", normal);
         var text = selected ? SelectedText : NormalText;
-        foreach (var name in new[] { "font_color", "font_hover_color", "font_pressed_color", "font_focus_color" })
+        foreach (var name in FontColorNames)
         {
             button.AddThemeColorOverride(name, text);
         }
