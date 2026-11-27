@@ -1,2 +1,4 @@
 - 2026-11-27 intake: route table (UI change), roles designer→developer→qa→kb, gates G2 G3 G4
 - 2026-11-27 game-designer: DONE — docs/specs/main-menu.md (15 ACs, 3 open questions)
+- 2026-11-27 client: G2 answers — Licenses follow-up (#3), New Game loads ring, Esc in ring returns to menu
+- 2026-11-27 game-designer: DONE — spec revised (20 ACs, ui_quit_game renamed ui_back, ScreenFlow.OnBack)
