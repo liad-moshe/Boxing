@@ -70,7 +70,7 @@ Steps:
 8. qa → work/<n>/qa-report.md, PASS or FAIL. FAIL goes back to 7. Max 2 cycles, then an opus re-run, then
    status:blocked and ask the client.
 9. kb-keeper (skip only if no src/, game/ or project.godot change).
-10. /ship → the PR body is the CLIENT BRIEFING: player-facing change, how to playtest (artifact link, keys,
+10. ship-task (run automatically after 8-9) → the PR body is the CLIENT BRIEFING: player-facing change, how to playtest (artifact link, keys,
     5-item checklist), acceptance-criteria status, roles run/skipped plus models, risks, open questions,
     and a ⚠ governance banner if protected paths changed. Delete work/<n>/ in the final commit, push,
     `gh pr create`, then recommend /clear.

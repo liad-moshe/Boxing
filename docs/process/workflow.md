@@ -37,7 +37,7 @@ This file is protected: agents never edit it.
  [9] kb-keeper ─► docs/kb/*  (skipped only if no src/, game/ or project.godot change)
         │
         ▼
-[10] /ship ─► PR whose body is your CLIENT BRIEFING; work/<n>/ deleted in the final commit;
+[10] ship-task (automatic) ─► PR whose body is your CLIENT BRIEFING; work/<n>/ deleted in the final commit;
         │      Producer recommends /clear
         ▼
 [11] CI: build-test, kb-check, governance ── green ──► client-approval job waits

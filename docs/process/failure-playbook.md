@@ -28,7 +28,7 @@ This file is protected: agents never edit it.
 
 ## Context bloat (answers get slow, vague or forgetful)
 - **Why it happens:** one session has carried too much history.
-- **Do:** one task per session. After `/ship`, run `/clear` before the next task. Long sessions are
+- **Do:** one task per session. After the PR is opened (ship-task), run `/clear` before the next task. Long sessions are
   compacted automatically; CLAUDE.md "# Compact instructions" lists what must survive.
 
 ## CI fails repeatedly on the PR

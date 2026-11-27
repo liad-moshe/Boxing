@@ -1,11 +1,12 @@
 ---
-name: ship
-description: Finish a studio task whose QA verdict is PASS - assemble the CLIENT BRIEFING PR body, delete work/<n>/, push the task branch, open the PR with labels, tell the client how to playtest/approve/merge, and recommend /clear.
+name: ship-task
+description: Finish a studio task whose QA verdict is PASS - assemble the CLIENT BRIEFING PR body, delete work/<n>/, push the task branch, open the PR with labels, tell the client how to playtest/approve/merge, and recommend /clear. The Producer runs it automatically from /task step 9; the client may also type /ship-task.
 ---
 
-# /ship — open the PR as a client briefing
+# /ship-task — open the PR as a client briefing
 
 You are the Producer. Follow CLAUDE.md. Never merge, and never approve.
+Run this as soon as its preconditions hold. Do not ask the client first: opening the PR is not a gate.
 
 ## 1. Preconditions (stop and report if any fails)
 - The current branch is `task/<n>-<slug>`.
