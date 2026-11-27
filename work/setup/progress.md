@@ -93,7 +93,10 @@ when it is pasted, so this file never guesses at future work.
 - [x] 1-3. .claude/settings.json: PreToolUse Bash → bash-guard; disableBypassPermissionsMode; deny list (27 rules)
       (shown to the client, written only after "yes"; after the write, protected paths are read-only for
       every session, including the setup session)
-- [ ] 4. Commit + push settings.json; verify the lock-down live (blocked edit + blocked gh api)
+- [x] 4. Commit + push settings.json (543283d); lock-down verified live: Edit CLAUDE.md denied by permission
+      rule; `gh api user` and `touch .claude/settings.json` blocked by bash-guard; tree unchanged.
+      Known conservative false positive: `sed -i` on a work/ file whose sed TEXT mentions a protected
+      path is blocked → use the Edit tool for such edits.
 - [ ] 5. Client, in their own PowerShell window: fine-grained PAT → gh auth logout / login --with-token /
       setup-git / status → remove git:https://github.com from Credential Manager → restart claude → STAGE 7
 
