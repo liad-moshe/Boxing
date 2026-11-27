@@ -90,7 +90,7 @@ when it is pasted, so this file never guesses at future work.
       settings; Edit rules cover Write/NotebookEdit; mcp__<server>__* valid; tool name "PowerShell";
       disableBypassPermissionsMode does not affect auto mode)
 - [x] 0b. Hook test suite re-run before the lock-down
-- [ ] 1-3. .claude/settings.json: PreToolUse Bash → bash-guard; disableBypassPermissionsMode; deny list
+- [x] 1-3. .claude/settings.json: PreToolUse Bash → bash-guard; disableBypassPermissionsMode; deny list (27 rules)
       (shown to the client, written only after "yes"; after the write, protected paths are read-only for
       every session, including the setup session)
 - [ ] 4. Commit + push settings.json; verify the lock-down live (blocked edit + blocked gh api)

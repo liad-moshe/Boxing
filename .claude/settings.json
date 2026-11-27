@@ -7,6 +7,7 @@
   },
   "permissions": {
     "defaultMode": "acceptEdits",
+    "disableBypassPermissionsMode": "disable",
     "allow": [
       "Bash(dotnet build *)",
       "Bash(dotnet test *)",
@@ -35,6 +36,35 @@
       "Bash(gh label list *)",
       "WebSearch",
       "WebFetch"
+    ],
+    "deny": [
+      "PowerShell",
+      "Edit(/.claude/**)",
+      "Edit(/.github/**)",
+      "Edit(/CLAUDE.md)",
+      "Edit(/docs/process/**)",
+      "Edit(/global.json)",
+      "Edit(/.gitignore)",
+      "Edit(/.gitattributes)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push origin main *)",
+      "Bash(git push origin HEAD:main *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh api *)",
+      "Bash(gh auth *)",
+      "Bash(gh secret *)",
+      "Bash(gh variable *)",
+      "Bash(gh workflow *)",
+      "Bash(gh ruleset *)",
+      "Bash(gh repo edit *)",
+      "Bash(gh repo delete *)",
+      "Bash(gh release delete *)",
+      "Bash(git config --global *)",
+      "Bash(claude *)",
+      "mcp__claude-in-chrome__*",
+      "mcp__Claude_Browser__*",
+      "mcp__computer-use__*"
     ]
   },
   "hooks": {
@@ -45,6 +75,17 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/studio-hook.sh\" session-context"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/studio-hook.sh\" bash-guard"
           }
         ]
       }
