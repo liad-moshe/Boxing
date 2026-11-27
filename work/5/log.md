@@ -1,0 +1,1 @@
+- 2026-11-27 playtest-feedback: PR #6 item 1 (humanoid look) on this branch; item 2 (portraits) new visual issue
