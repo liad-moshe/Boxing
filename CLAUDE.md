@@ -90,7 +90,9 @@ Defaults: everyone runs on sonnet, except kb-keeper on haiku. You may pass `mode
 - Never add absolute or user-specific paths to committed files.
 
 ## Shipping
-- /ship builds the PR body as the CLIENT BRIEFING:
+- The ship-task skill builds the PR body as the CLIENT BRIEFING. The Producer runs it automatically when
+  QA says PASS and kb-keeper is done (or skipped). Opening the PR is not a gate, so never wait for the
+  client to ask. The briefing contains:
   - the player-facing change,
   - how to playtest (artifact link, keys, a 5-item checklist),
   - acceptance-criteria status,

@@ -24,6 +24,7 @@
       "Bash(git push origin task/*)",
       "Bash(git push -u origin setup/*)",
       "Bash(git push origin setup/*)",
+      "Skill(ship-task)",
       "Bash(gh pr create *)",
       "Bash(gh pr view *)",
       "Bash(gh pr list *)",

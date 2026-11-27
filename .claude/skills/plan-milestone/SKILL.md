@@ -44,7 +44,7 @@ plan?"** Then stop. Accept edits and redraft until the client says yes.
    `gh issue create --title "<title>" --body "<outcome, acceptance idea, depends on #..>" --label type:<type>`
    Add `--label needs:boxing` where it applies. Record the issue numbers in the tracking issue with
    `gh issue comment <p> --body ...`.
-4. Commit `docs(plan): <milestone> roadmap`. Then ship it as a lean, no-code PR with the ship skill, with
+4. Commit `docs(plan): <milestone> roadmap`. Then ship it as a lean, no-code PR with the ship-task skill, with
    QA reduced to "docs only" and the reason noted in brief.md.
 
 ## Rules

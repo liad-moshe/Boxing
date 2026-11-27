@@ -1,6 +1,6 @@
 ---
 name: task
-description: Start a new studio task from the client's request or a GitHub issue - classify the route, create the issue/branch/brief, run the client gates, delegate to the subagents in route order with checkpoints, then continue to /ship.
+description: Start a new studio task from the client's request or a GitHub issue - classify the route, create the issue/branch/brief, run the client gates, delegate to the subagents in route order with checkpoints, then open the PR with the ship-task skill.
 argument-hint: "<request or #issue>"
 disable-model-invocation: true
 ---
@@ -87,6 +87,7 @@ and list the open questions. Ask "Spec OK?" and **stop** until they answer.
 - Re-classify if the diff exceeds ~400 lines or touches more than 3 systems: back to G1 as a mechanic.
 
 ## 9. Ship
-When QA says PASS and kb-keeper is done (or skipped), continue with the **ship** skill.
+When QA says PASS and kb-keeper is done (or skipped), run the **ship-task** skill right away, in the same
+turn. Do not stop to ask the client: opening the PR is not a gate. G3 and G4 stay with the client.
 
 End every reply with `▶ Now: … | ⏳ Waiting on you: … | ➡ Next: …`.
