@@ -57,7 +57,7 @@ Same rules as the main menu, with the 2 cards as items (index 0 and 1) and horiz
 | ui_back | Escape | Existing. Per the Escape table above. Ignores key repeat. |
 | (mouse) | Hover / left click | Control mouse signals, no InputMap action. |
 
-No clash with docs/kb/input-map.md (menu_up and menu_down stay for the main menu; they do nothing on this screen). The developer adds menu_left and menu_right to project.godot and docs/kb/input-map.md.
+No clash with docs/kb/input-map.md (menu_up and menu_down stay for the main menu; they do nothing on this screen). menu_left and menu_right are registered in code at startup (game/scripts/InputActions.EnsureRegistered), not in project.godot, so no project.godot edit is required. The developer lists both in docs/kb/input-map.md, noting they are code-registered.
 
 ## Visual description (code-built, no external assets)
 - Control nodes in code, same style constants approach as the menu: dark background, header `Label` at top, two cards side by side centred.
@@ -101,7 +101,7 @@ AC1 to AC10 are xUnit tests in `tests/Core.Tests`. The rest are checked in the r
 - AC19. **Given** the ring after a select, **when** Escape is pressed, **then** the menu shows; **and when** New Game is chosen again, **then** step 1 starts fresh (default highlight, no "YOU" tag, no earlier picks).
 - AC20. **Given** any select step, **when** Escape is held about two seconds, **then** it goes back exactly one step and stops (no repeat skipping through steps or quitting).
 - AC21. **Given** a double click or held Enter on a card, **when** processed, **then** only one step advance happens (no skipped opponent step, no double ring load).
-- AC22. **Given** the project is built, **when** `project.godot` is inspected, **then** `menu_left` (Left) and `menu_right` (Right) exist and docs/kb/input-map.md lists them.
+- AC22. **Given** the project is built, **when** `InputActions.EnsureRegistered` has run at startup, **then** `menu_left` (Left arrow, physical) and `menu_right` (Right arrow, physical) exist in the InputMap, and docs/kb/input-map.md lists both and notes they are code-registered (not in project.godot).
 - AC23. **Given** the ring is launched directly (smoke scene, no select), **when** it loads, **then** it shows two fighters using the first roster entry and no error occurs.
 
 ## Balance values
