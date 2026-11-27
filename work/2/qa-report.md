@@ -61,3 +61,27 @@ None in the implementation.
 3. Click New Game, or press Enter on it. The ring appears. Press Escape once. You are back at the menu with New Game highlighted, and the game is still open.
 4. In the ring, hold Escape for about 2 seconds. You land on the menu once and the game stays open. Then do New Game, Escape, New Game again. The ring loads each time with no errors.
 5. On the menu, press Escape. The game closes. Relaunch and click Exit (or select it and press Enter). The game closes. Also hold Enter and double-click New Game. There should be no errors and no double load.
+
+## Re-check after review fixes
+
+Commands (exit code, result):
+| # | Command | Exit | Result |
+|---|---|---|---|
+| 1 | `dotnet build Boxing.sln -warnaserror` | 0 | 0 Warning(s), 0 Error(s) |
+| 2 | `dotnet test tests/Core.Tests` | 0 | Passed 16, Failed 0 (17 before, minus the removed vacuous test) |
+| 3 | `godot --headless --path . --build-solutions --quit` | 0 | OK, `git status` clean afterwards |
+| 4 | `godot --headless ... Smoke.tscn` | 0 | `SMOKE: PASS`, 0 matches for ERROR, SCRIPT ERROR or Unhandled exception |
+
+Review fixes checked by code:
+- Keyboard and click work with no mouse motion. `_UnhandledInput` (Up, Down, Confirm, Back) and `button.Pressed` call `Activate` and never read `_mouseMoved`. PASS.
+- Hover is ignored until the first mouse motion. `_Input` sets `_mouseMoved` on `InputEventMouseMotion`, and `OnHover` returns early while it is false. PASS.
+- Scene paths: the only `res://game/scenes` strings in `.cs` files are in `ScenePaths.cs`. The match in `Smoke.cs` is a comment. Menu.cs and Main.cs use `ScenePaths.Ring` and `ScenePaths.Menu`. PASS.
+- `ui_quit_game` has no hits in `src/`, `game/`, `tests/` or `project.godot`. The dead Quit branch is gone from `Main.cs`. PASS.
+- Styleboxes are cached as readonly fields, and `ApplyStyle` reuses them. PASS.
+- API-drift scan over all `.cs` files: 0 hits. PASS.
+- External assets: the diff adds no image, model, font or audio file. PASS.
+
+Not re-run: the KB check (docs only). Its stale-KB follow-up from the first cycle is unchanged, and the later wip commit "kb update" was not re-audited here.
+The first-motion guard needs a real mouse, so it stays on the client's playtest (checklist items 1 and 2 above).
+
+VERDICT: PASS
