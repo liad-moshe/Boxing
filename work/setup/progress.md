@@ -85,8 +85,17 @@ when it is pasted, so this file never guesses at future work.
 - [x] 7. PR checks re-ran (push 8400364, run 45912170910): client-approval waiting for review (reviewer liad-moshe); PR merge state BLOCKED
 - [x] 8. docs/process/github-settings.md
 
-## Stage 6
-- [ ] (sub-items added when the Stage 6 prompt is pasted)
+## Stage 6 — Lock-down
+- [x] 0. Rule syntax checked against code.claude.com permissions/tools docs (/path = project root in project
+      settings; Edit rules cover Write/NotebookEdit; mcp__<server>__* valid; tool name "PowerShell";
+      disableBypassPermissionsMode does not affect auto mode)
+- [x] 0b. Hook test suite re-run before the lock-down
+- [ ] 1-3. .claude/settings.json: PreToolUse Bash → bash-guard; disableBypassPermissionsMode; deny list
+      (shown to the client, written only after "yes"; after the write, protected paths are read-only for
+      every session, including the setup session)
+- [ ] 4. Commit + push settings.json; verify the lock-down live (blocked edit + blocked gh api)
+- [ ] 5. Client, in their own PowerShell window: fine-grained PAT → gh auth logout / login --with-token /
+      setup-git / status → remove git:https://github.com from Credential Manager → restart claude → STAGE 7
 
 ## Stage 7
 - [ ] (sub-items added when the Stage 7 prompt is pasted)
