@@ -1,0 +1,55 @@
+{
+  "_comment": "Fighter roster for character select (issue #5). Stats are display-only for now: no combat exists yet. Values are on a 1..statMax scale. GAMEPLAY ABSTRACTION, not real boxing data.",
+  "statMax": 10,
+  "statOrder": ["power", "speed", "stamina", "defense", "reach", "chin"],
+  "statLabels": {
+    "power": "Power",
+    "speed": "Speed",
+    "stamina": "Stamina",
+    "defense": "Defense",
+    "reach": "Reach",
+    "chin": "Chin"
+  },
+  "fighters": [
+    {
+      "id": "anvil",
+      "name": "Bruno Kessler",
+      "nickname": "The Anvil",
+      "archetype": "Slugger",
+      "description": "Heavy hands, short arms, takes a punch to give one.",
+      "stats": { "power": 9, "speed": 4, "stamina": 6, "defense": 4, "reach": 5, "chin": 8 },
+      "look": {
+        "skinColor": "#c68642",
+        "trunksColor": "#b22222",
+        "gloveColor": "#b22222",
+        "heightScale": 0.95,
+        "widthScale": 1.2
+      }
+    },
+    {
+      "id": "ghost",
+      "name": "Mateo Rivera",
+      "nickname": "Ghost",
+      "archetype": "Out-boxer",
+      "description": "Long, quick and slippery; wins from a distance.",
+      "stats": { "power": 4, "speed": 9, "stamina": 6, "defense": 7, "reach": 7, "chin": 3 },
+      "look": {
+        "skinColor": "#e0ac69",
+        "trunksColor": "#1e5fbf",
+        "gloveColor": "#1e5fbf",
+        "heightScale": 1.1,
+        "widthScale": 0.9
+      }
+    }
+  ],
+  "ring": {
+    "_comment": "Idle placement in the ring, metres from ring centre. Player on the left of the side-on camera, opponent on the right, facing each other.",
+    "playerX": -1.5,
+    "opponentX": 1.5,
+    "baseHeight": 1.8,
+    "baseWidth": 0.5
+  },
+  "ui": {
+    "defaultHighlightId": "anvil"
+  }
+}

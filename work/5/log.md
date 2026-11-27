@@ -1,1 +1,2 @@
 - 2026-11-27 intake: route table (ui), pending G1
+- 2026-11-27 game-designer: DONE — spec docs/specs/character-select.md + data/balance/fighters.json; 1 question (names/colours)
