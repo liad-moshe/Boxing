@@ -5,8 +5,52 @@ using System.Text.Json;
 
 namespace Boxing.Core;
 
-/// <summary>Colours (hex strings) and body scale of a fighter's primitive body.</summary>
-public sealed record FighterLook(string SkinColor, string TrunksColor, string GloveColor, double HeightScale, double WidthScale);
+/// <summary>Colours (hex strings) and build scales of a fighter's primitive body.</summary>
+public sealed record FighterLook(
+    string SkinColor,
+    string HairColor,
+    string HairStyle,
+    string TrunksColor,
+    string WaistbandColor,
+    string GloveColor,
+    double HeightScale,
+    double WidthScale,
+    double HeadScale,
+    double NeckScale,
+    double ShoulderScale,
+    double ArmLengthScale,
+    double ArmThicknessScale,
+    double LegThicknessScale);
+
+/// <summary>Shared human proportions and pose values (fractions of height H or width W), from the data file.</summary>
+public sealed class FighterBody
+{
+    /// <summary>Numeric keys that must be present in the "body" object.</summary>
+    public static readonly IReadOnlyList<string> RequiredNumbers = new[]
+    {
+        "headRadiusH", "headStretchY", "neckRadiusW", "neckHeightH", "torsoWidthW", "torsoDepthW", "torsoHeightH",
+        "shoulderRadiusW", "shoulderSpanW", "upperArmLengthH", "forearmLengthH", "armRadiusW", "gloveRadiusH",
+        "gloveStretch", "shortsHeightH", "waistbandHeightH", "upperLegLengthH", "lowerLegLengthH", "legRadiusW",
+        "footLengthH", "footHeightH", "eyeRadiusH", "noseRadiusH", "guardElbowBendDeg", "guardGloveHeightH",
+        "stanceFootSpreadW", "stanceLeadFootForwardW",
+    };
+
+    private readonly IReadOnlyDictionary<string, double> _values;
+
+    internal FighterBody(IReadOnlyDictionary<string, double> values, string eyeColor, string mouthColor)
+    {
+        _values = values;
+        EyeColor = eyeColor;
+        MouthColor = mouthColor;
+    }
+
+    public string EyeColor { get; }
+
+    public string MouthColor { get; }
+
+    /// <summary>Numeric body value by data key (see <see cref="RequiredNumbers"/>).</summary>
+    public double this[string key] => _values[key];
+}
 
 public sealed record FighterDef(
     string Id,
@@ -69,8 +113,10 @@ public sealed class FighterRoster
         double opponentX,
         double baseHeight,
         double baseWidth,
-        string defaultHighlightId)
+        string defaultHighlightId,
+        FighterBody body)
     {
+        Body = body;
         StatMax = statMax;
         StatOrder = statOrder;
         StatLabels = statLabels;
@@ -99,6 +145,8 @@ public sealed class FighterRoster
     public double BaseWidth { get; }
 
     public string DefaultHighlightId { get; }
+
+    public FighterBody Body { get; }
 
     /// <summary>Index of the default highlight (first card if the configured id is unknown).</summary>
     public int DefaultHighlightIndex => Math.Max(0, IndexOf(DefaultHighlightId));
@@ -199,11 +247,20 @@ public sealed class FighterRoster
 
                 var lookEl = Require(f, "look", id);
                 var look = new FighterLook(
-                    GetString(lookEl, "skinColor", id),
-                    GetString(lookEl, "trunksColor", id),
-                    GetString(lookEl, "gloveColor", id),
-                    Require(lookEl, "heightScale", id).GetDouble(),
-                    Require(lookEl, "widthScale", id).GetDouble());
+                    GetColor(lookEl, "skinColor", id),
+                    GetColor(lookEl, "hairColor", id),
+                    GetHairStyle(lookEl, id),
+                    GetColor(lookEl, "trunksColor", id),
+                    GetColor(lookEl, "waistbandColor", id),
+                    GetColor(lookEl, "gloveColor", id),
+                    GetScale(lookEl, "heightScale", id),
+                    GetScale(lookEl, "widthScale", id),
+                    GetScale(lookEl, "headScale", id),
+                    GetScale(lookEl, "neckScale", id),
+                    GetScale(lookEl, "shoulderScale", id),
+                    GetScale(lookEl, "armLengthScale", id),
+                    GetScale(lookEl, "armThicknessScale", id),
+                    GetScale(lookEl, "legThicknessScale", id));
                 fighters.Add(new FighterDef(
                     id,
                     GetString(f, "name", id),
@@ -217,6 +274,21 @@ public sealed class FighterRoster
             {
                 throw new RosterException("fighter list is empty");
             }
+
+            var bodyEl = Require(root, "body", "root");
+            var bodyValues = new Dictionary<string, double>();
+            foreach (var key in FighterBody.RequiredNumbers)
+            {
+                var el = Require(bodyEl, key, "body");
+                if (el.ValueKind != JsonValueKind.Number)
+                {
+                    throw new RosterException($"'{key}' in body is not a number");
+                }
+
+                bodyValues[key] = el.GetDouble();
+            }
+
+            var body = new FighterBody(bodyValues, GetColor(bodyEl, "eyeColor", "body"), GetColor(bodyEl, "mouthColor", "body"));
 
             var ring = Require(root, "ring", "root");
             var defaultId = fighters[0].Id;
@@ -234,7 +306,8 @@ public sealed class FighterRoster
                 Require(ring, "opponentX", "ring").GetDouble(),
                 Require(ring, "baseHeight", "ring").GetDouble(),
                 Require(ring, "baseWidth", "ring").GetDouble(),
-                defaultId);
+                defaultId,
+                body);
         }
     }
 
@@ -259,6 +332,39 @@ public sealed class FighterRoster
         }
 
         return value;
+    }
+
+    private static string GetColor(JsonElement parent, string name, string where)
+    {
+        var value = GetString(parent, name, where);
+        try
+        {
+            ParseHexColor(value);
+        }
+        catch (Exception ex) when (ex is RosterException or FormatException)
+        {
+            throw new RosterException($"'{name}' in {where} is not a valid colour: '{value}' (use #rrggbb)");
+        }
+
+        return value;
+    }
+
+    private static string GetHairStyle(JsonElement parent, string where)
+    {
+        var style = GetString(parent, "hairStyle", where);
+        HairStyles.CapScale(style);
+        return style;
+    }
+
+    private static double GetScale(JsonElement parent, string name, string where)
+    {
+        var el = Require(parent, name, where);
+        if (el.ValueKind != JsonValueKind.Number || el.GetDouble() <= 0)
+        {
+            throw new RosterException($"'{name}' in {where} must be a number greater than 0");
+        }
+
+        return el.GetDouble();
     }
 
     private static string GetString(JsonElement parent, string name, string where) =>
