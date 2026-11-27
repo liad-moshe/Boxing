@@ -27,6 +27,23 @@ public partial class Smoke : Node
                 return;
             }
 
+            var menuScene = GD.Load<PackedScene>("res://game/scenes/Menu.tscn");
+            if (menuScene is null)
+            {
+                Fail("could not load Menu.tscn");
+                return;
+            }
+
+            var menu = menuScene.Instantiate();
+            AddChild(menu);
+            if (menu.GetNodeOrNull<Button>("Column/NewGame") is null || menu.GetNodeOrNull<Button>("Column/Exit") is null)
+            {
+                Fail("Menu is missing its New Game / Exit buttons");
+                return;
+            }
+
+            menu.QueueFree();
+
             _main = scene.Instantiate();
             AddChild(_main);
             GD.Print($"SMOKE: instantiated {MainScenePath}, running {FramesToRun} physics frames");
