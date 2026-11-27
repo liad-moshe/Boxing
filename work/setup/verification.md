@@ -30,5 +30,11 @@ which overrides settings.json). The SessionStart hook warned about it correctly.
 | B7b | qa subagent Write src/x.cs | path-guard block | path-guard: "src/x.cs is outside this agent's write paths (tests/ work/)" | PASS |
 | B7c | `git status` after B7 | clean, no src/x.cs | clean (one transient `.claude/settings.local.json.tmp.*` from the app's atomic write of settings.local.json, gone seconds later) | PASS |
 | B8 | developer adds [Obsolete] call in Main.cs on scratch/build-gate | build-gate forces fix or BLOCKED | used `AnimationPlayer.AnimationProcessCallback.Idle`; Stop build-gate ran `dotnet build Boxing.sln -warnaserror` → CS0618; developer removed the call; Producer re-check: `git diff` empty, build 0 warnings / 0 errors; branch deleted | PASS |
+| A2' | Client: `gh auth status` + GitHub UI | fine-grained, exact permissions | `Token: github_pat_…`, no scopes line; UI: Read actions/commit statuses/metadata, RW code/issues/pull requests | PASS |
+| C9 | Client: `git push origin HEAD:main` | GH013 | `GH013: Repository rule violations` ("merges must occur on the web", "client-approval is waiting") → remote rejected | PASS |
+| C10 | Client: push ci.yml change on gate-test | rejected | "refusing to allow a Personal Access Token to create or update workflow … without `workflow` scope"; no remote gate-test | PASS |
+| C11 | Client: POST pending_deployments (run 45921425277, env 28113149994) | 403/404 | HTTP 403 "Resource not accessible by personal access token" | PASS |
+| C12 | Client: `gh pr merge 1 --squash` | refused | "not mergeable: the base branch policy prohibits the merge" | PASS |
+| C13 | Client: `claude --dangerously-skip-permissions` | refused | Claude started, but the status bar showed `⏵⏵ accept edits on` (defaultMode), not bypass: the flag was rejected and Claude fell back (docs: the key makes Claude "reject" the flag; exit vs fallback is undocumented) | PASS |
 | D1 | grep tracked files for absolute paths, "tzone", tokens | none | only placeholders (`C:/path/to/godot.exe` in SETUP.md + settings.local.example.json), a "D:/ vs /d/" comment in studio-hook.sh, and `res://` Godot paths; no "tzone" outside this work/ file; no token patterns | PASS |
 | D2 | `git check-ignore -v` local files | both ignored | `.gitignore:20 .claude/settings.local.json`, `.gitignore:21 CLAUDE.local.md` | PASS |
