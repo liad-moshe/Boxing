@@ -5,3 +5,4 @@
 - 2026-11-27 developer: BLOCKED (plan item 3) — code/tests/smoke done (commit d49aa9a); project.godot edit needs client, see governance-proposal.md
 - 2026-11-27 producer: applied project.godot edit (client approved 'Go ahead'; exception to Producer write rule) — main scene Menu, ui_back, menu_up/down/confirm
 - 2026-11-27 qa: PASS — 0 defects; kb-check pending kb-keeper
+- 2026-11-27 kb-keeper: DONE — input-map, ui-map, feature-map updated
