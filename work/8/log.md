@@ -1,2 +1,3 @@
 - 2026-11-27 intake: route lean (docs/governance), Producer only; G1 approved by client ("Yes, write it")
 - 2026-11-27 producer: DONE — wrote governance-proposal.md (rename ship → ship-task, auto-run after QA PASS)
+- 2026-11-27 client: applied governance proposal (5bf1871); check grep clean. Next: ship-task (automatic)
