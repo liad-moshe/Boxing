@@ -5,13 +5,15 @@ namespace Boxing.Game;
 
 /// <summary>
 /// Pipeline-proof main scene. Builds a primitive ring floor, a side-on camera and a light entirely from
-/// code (no external assets), runs a <see cref="RoundClock"/> from Boxing.Core, and quits on ui_quit_game.
+/// code (no external assets), runs a <see cref="RoundClock"/> from Boxing.Core, and returns to the menu on ui_back.
 /// </summary>
 public partial class Main : Node3D
 {
     public const double RoundSeconds = 180;
 
-    private static readonly StringName QuitAction = "ui_quit_game";
+    private static readonly StringName BackAction = "ui_back";
+
+    private bool _leaving;
 
     /// <summary>The round clock from Boxing.Core; proves the game assembly references pure logic.</summary>
     public RoundClock Clock { get; } = new(RoundSeconds);
@@ -51,10 +53,18 @@ public partial class Main : Node3D
 
     public override void _UnhandledInput(InputEvent @event)
     {
-        if (@event.IsActionPressed(QuitAction))
+        // IsActionPressed ignores key echo by default, so a held Escape fires once.
+        if (_leaving || !@event.IsActionPressed(BackAction))
         {
-            GetViewport().SetInputAsHandled();
-            GetTree().Quit();
+            return;
+        }
+
+        GetViewport().SetInputAsHandled();
+        _leaving = true;
+        // From the ring ScreenFlow only ever answers GoToMenu (Escape never quits from here).
+        if (ScreenFlow.OnBack(Screen.Ring) == BackResult.GoToMenu)
+        {
+            GetTree().ChangeSceneToFile(ScenePaths.Menu);
         }
     }
 }
