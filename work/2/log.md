@@ -1,1 +1,2 @@
 - 2026-11-27 intake: route table (UI change), roles designer→developer→qa→kb, gates G2 G3 G4
+- 2026-11-27 game-designer: DONE — docs/specs/main-menu.md (15 ACs, 3 open questions)
