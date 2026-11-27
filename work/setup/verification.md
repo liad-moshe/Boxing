@@ -26,3 +26,9 @@ which overrides settings.json). The SessionStart hook warned about it correctly.
 | B4 | `echo test >> CLAUDE.md` | hook block | bash-guard: "redirecting output into a protected path" | PASS |
 | B5 | `git push origin HEAD:main` | hook/deny block | bash-guard: "pushing to main/master is not allowed" | PASS |
 | B6 | `gh api user` | blocked | bash-guard: "this gh command is reserved for the client" | PASS |
+| B7a | qa subagent `gh pr list` | subagent guard block | bash-guard: "subagent 'qa' may not use git push or gh; only the Producer talks to GitHub" | PASS |
+| B7b | qa subagent Write src/x.cs | path-guard block | path-guard: "src/x.cs is outside this agent's write paths (tests/ work/)" | PASS |
+| B7c | `git status` after B7 | clean, no src/x.cs | clean (one transient `.claude/settings.local.json.tmp.*` from the app's atomic write of settings.local.json, gone seconds later) | PASS |
+| B8 | developer adds [Obsolete] call in Main.cs on scratch/build-gate | build-gate forces fix or BLOCKED | used `AnimationPlayer.AnimationProcessCallback.Idle`; Stop build-gate ran `dotnet build Boxing.sln -warnaserror` → CS0618; developer removed the call; Producer re-check: `git diff` empty, build 0 warnings / 0 errors; branch deleted | PASS |
+| D1 | grep tracked files for absolute paths, "tzone", tokens | none | only placeholders (`C:/path/to/godot.exe` in SETUP.md + settings.local.example.json), a "D:/ vs /d/" comment in studio-hook.sh, and `res://` Godot paths; no "tzone" outside this work/ file; no token patterns | PASS |
+| D2 | `git check-ignore -v` local files | both ignored | `.gitignore:20 .claude/settings.local.json`, `.gitignore:21 CLAUDE.local.md` | PASS |
