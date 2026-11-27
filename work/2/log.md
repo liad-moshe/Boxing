@@ -1,0 +1,1 @@
+- 2026-11-27 intake: route table (UI change), roles designer→developer→qa→kb, gates G2 G3 G4
