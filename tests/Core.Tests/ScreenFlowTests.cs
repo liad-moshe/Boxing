@@ -11,6 +11,12 @@ public class ScreenFlowTests
     }
 
     [Fact]
+    public void OnBack_FromCharacterSelect_GoesToMenu_NeverQuits()
+    {
+        Assert.Equal(BackResult.GoToMenu, ScreenFlow.OnBack(Screen.CharacterSelect));
+    }
+
+    [Fact]
     public void OnBack_FromRing_GoesToMenu_NeverQuits()
     {
         var result = ScreenFlow.OnBack(Screen.Ring);

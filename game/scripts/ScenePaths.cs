@@ -4,5 +4,6 @@ namespace Boxing.Game;
 public static class ScenePaths
 {
     public const string Menu = "res://game/scenes/Menu.tscn";
+    public const string CharacterSelect = "res://game/scenes/CharacterSelect.tscn";
     public const string Ring = "res://game/scenes/Main.tscn";
 }

@@ -44,6 +44,23 @@ public partial class Smoke : Node
 
             menu.QueueFree();
 
+            var selectScene = GD.Load<PackedScene>(ScenePaths.CharacterSelect);
+            if (selectScene is null)
+            {
+                Fail("could not load CharacterSelect.tscn");
+                return;
+            }
+
+            var select = selectScene.Instantiate();
+            AddChild(select);
+            if (select.GetNodeOrNull<Node>("Column/Cards/Card_anvil") is null || select.GetNodeOrNull<Node>("Column/Cards/Card_ghost") is null)
+            {
+                Fail("CharacterSelect is missing its two cards");
+                return;
+            }
+
+            select.QueueFree();
+
             _main = scene.Instantiate();
             AddChild(_main);
             GD.Print($"SMOKE: instantiated {MainScenePath}, running {FramesToRun} physics frames");
@@ -72,6 +89,12 @@ public partial class Smoke : Node
             if (_main is null || !IsInstanceValid(_main) || !_main.IsInsideTree())
             {
                 Fail("Main is no longer in the scene tree");
+                return;
+            }
+
+            if (_main.GetNodeOrNull<Node3D>("PlayerFighter") is null || _main.GetNodeOrNull<Node3D>("OpponentFighter") is null)
+            {
+                Fail("Main is missing its two fighters");
                 return;
             }
 

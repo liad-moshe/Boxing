@@ -17,6 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="../../data/balance/fighters.json" Link="data/fighters.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../../src/Core/Boxing.Core.csproj" />
   </ItemGroup>
 </Project>
