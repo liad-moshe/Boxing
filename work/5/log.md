@@ -1,7 +1,0 @@
-- 2026-11-27 intake: route table (ui), pending G1
-- 2026-11-27 game-designer: DONE — spec docs/specs/character-select.md + data/balance/fighters.json; 1 question (names/colours)
-- 2026-11-27 developer: DONE — core+game+tests, build ok, 35 tests, smoke PASS; project.godot menu_left/right blocked (governance-proposal.md), runtime fallback in InputActions
-- 2026-11-27 qa: FAIL (1st) — AC22 only: project.godot/input-map.md lack menu_left/right; runtime fallback works. Risk: fighters.json maybe not packed in export. Asked client: apply proposal or waive
-- 2026-11-27 game-designer: DONE — AC22 amended to code-registered (client wants no project.godot edits); governance proposal dropped
-- 2026-11-27 kb-keeper: DONE — feature/input/ui maps updated; note: ScreenFlow.OnBack(CharacterSelect) unused by game code
-- 2026-11-27 qa: PASS — AC22 amended passes; 35 tests, smoke PASS. Risk: fighters.json export packing unverified
