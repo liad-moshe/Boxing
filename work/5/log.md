@@ -2,3 +2,4 @@
 - 2026-11-27 game-designer: DONE — humanoid look spec (AC24-AC29), fighters.json look/body data; awaiting G2
 - 2026-11-27 developer: DONE — humanoid FighterBuilder, GuardPose, 50 tests, smoke PASS; look unverified visually
 - 2026-11-27 qa: PASS — AC24-AC29, 50 tests, smoke PASS
+- kb-keeper: DONE
