@@ -44,6 +44,15 @@ public partial class Main : Node3D
         var camera = new Camera3D { Name = "Camera", Fov = 50f, Current = true };
         AddChild(camera);
         camera.LookAtFromPosition(new Vector3(0f, 1.6f, 7f), new Vector3(0f, 0.8f, 0f), Vector3.Up);
+
+        // Picks come from character select; a direct launch (smoke test) falls back to the first roster entry.
+        var roster = GameSession.Roster;
+        var player = roster.FindOrFirst(GameSession.PlayerId);
+        var opponent = roster.FindOrFirst(GameSession.OpponentId);
+        AddChild(FighterBuilder.Build("PlayerFighter", player, roster, "YOU", 1f));
+        AddChild(FighterBuilder.Build("OpponentFighter", opponent, roster, "CPU", -1f));
+        GetNode<Node3D>("PlayerFighter").Position = new Vector3((float)roster.PlayerX, 0f, 0f);
+        GetNode<Node3D>("OpponentFighter").Position = new Vector3((float)roster.OpponentX, 0f, 0f);
     }
 
     public override void _Process(double delta)
@@ -64,6 +73,7 @@ public partial class Main : Node3D
         // From the ring ScreenFlow only ever answers GoToMenu (Escape never quits from here).
         if (ScreenFlow.OnBack(Screen.Ring) == BackResult.GoToMenu)
         {
+            GameSession.Clear();
             GetTree().ChangeSceneToFile(ScenePaths.Menu);
         }
     }

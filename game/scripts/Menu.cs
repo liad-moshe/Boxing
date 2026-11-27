@@ -150,7 +150,8 @@ public partial class Menu : Control
         _leaving = true;
         if (index == 0)
         {
-            GetTree().ChangeSceneToFile(ScenePaths.Ring);
+            GameSession.Clear();
+            GetTree().ChangeSceneToFile(ScenePaths.CharacterSelect);
         }
         else
         {
