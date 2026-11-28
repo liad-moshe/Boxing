@@ -35,3 +35,7 @@ two punch keys (jab, cross). Jab = lead hand, cross = rear hand; which glove tha
 boxer's STANCE. Stance is set per boxer in Character Select (option 2): orthodox or southpaw. Mirrored
 animation for southpaw. No in-fight stance switch (later task). Previous 4-key draft and 2x2 grid are dropped.
 Model override: game-designer · opus · rule (a) · 2026-11-28 (spec rewrite for new mechanic scope).
+
+## G2 approved (2026-11-28)
+Client: "Specs ok". The two open choices were not answered separately, so the spec's recommendations apply:
+stance control = Up/Down in Character Select (no new key); both steps start on Orthodox (no per-boxer default).
