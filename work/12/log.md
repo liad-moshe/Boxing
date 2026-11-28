@@ -9,3 +9,4 @@
 - 2026-11-28 client: G2 approved (spec OK); open choices default to spec recommendations (Up/Down, Orthodox start)
 - 2026-11-28 developer: DONE — stance impl, build 0 warn, 166 tests pass, smoke PASS; ~735 lines mostly tests/smoke, already full route + G1 so no re-classify
 - 2026-11-28 qa: PASS — build 0 warn, 166 tests, smoke PASS, 0 defects; kb input-map stale
+- 2026-11-28 kb-keeper: DONE — feature/input/ui maps updated
