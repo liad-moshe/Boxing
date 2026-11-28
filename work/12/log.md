@@ -5,3 +5,4 @@
 - 2026-11-28 game-designer: DONE — guard boxing wording applied (spec only)
 - 2026-11-28 developer: DONE — guard fix, 179 tests pass, smoke PASS; tuned guardGloveBackH 0.06, guardGloveInwardW 0.14, guardElbowInwardShare 0.9; added TwoBoneArm
 - 2026-11-28 game-designer: DONE — spec/data comments synced to tuned guard values
+- 2026-11-28 qa: PASS — 180 tests, smoke PASS, 0 defects; added GuardArmGeometryTests for AC33 elbow gap
