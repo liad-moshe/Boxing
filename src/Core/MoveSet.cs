@@ -58,6 +58,9 @@ public sealed record VisualTuning(
     double CrossTorsoTurnDeg,
     double GuardGloveRaiseH,
     double GuardGloveInwardW,
+    double GuardGloveBackH,
+    double GuardElbowRaiseShare,
+    double GuardElbowInwardShare,
     double SlipHeadDropH,
     double SlipLeanDeg,
     double SlipTurnDeg);
@@ -78,6 +81,9 @@ public sealed class MoveSet
     {
         FighterState.Jab, FighterState.Cross, FighterState.SlipLeft, FighterState.SlipRight,
     };
+
+    /// <summary>Smallest guard glove raise (fraction of height) that still reads as a guard.</summary>
+    public const double MinGuardGloveRaiseH = 0.08;
 
     private readonly Dictionary<FighterState, MoveDef> _moves;
 
@@ -177,8 +183,11 @@ public sealed class MoveSet
             var visual = new VisualTuning(
                 NonNegative(visualEl, "punchExtendH", "visual"),
                 NonNegative(visualEl, "crossTorsoTurnDeg", "visual"),
-                NonNegative(visualEl, "guardGloveRaiseH", "visual"),
+                AtLeast(visualEl, "guardGloveRaiseH", "visual", MinGuardGloveRaiseH),
                 NonNegative(visualEl, "guardGloveInwardW", "visual"),
+                NonNegative(visualEl, "guardGloveBackH", "visual"),
+                NonNegative(visualEl, "guardElbowRaiseShare", "visual"),
+                NonNegative(visualEl, "guardElbowInwardShare", "visual"),
                 NonNegative(visualEl, "slipHeadDropH", "visual"),
                 NonNegative(visualEl, "slipLeanDeg", "visual"),
                 NonNegative(visualEl, "slipTurnDeg", "visual"));
@@ -267,6 +276,12 @@ public sealed class MoveSet
     {
         var value = Number(parent, name, where);
         return value > 0 ? value : throw new MoveDataException($"{where}.{name} must be greater than 0, got {value}");
+    }
+
+    private static double AtLeast(JsonElement parent, string name, string where, double min)
+    {
+        var value = Number(parent, name, where);
+        return value >= min ? value : throw new MoveDataException($"{where}.{name} must be at least {min} so the guard is visible, got {value}");
     }
 
     private static double NonNegative(JsonElement parent, string name, string where)

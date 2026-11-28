@@ -57,10 +57,10 @@
     "punchExtendH": 0.24,
     "crossTorsoTurnDeg": 25,
     "guardGloveRaiseH": 0.11,
-    "guardGloveInwardW": 0.22,
-    "guardGloveBackH": 0.08,
+    "guardGloveInwardW": 0.14,
+    "guardGloveBackH": 0.06,
     "guardElbowRaiseShare": 0.25,
-    "guardElbowInwardShare": 0.7,
+    "guardElbowInwardShare": 0.9,
     "slipHeadDropH": 0.07,
     "slipLeanDeg": 18,
     "slipTurnDeg": 20

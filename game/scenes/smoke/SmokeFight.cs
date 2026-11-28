@@ -165,6 +165,8 @@ public partial class Smoke
             Expect(playerRoot.GetNode<Node3D>(glove).Position.Y > rest[glove].Origin.Y + 0.005f, $"guard: {glove} is not higher than at rest");
         }
 
+        ExpectGuardCovers(playerRoot, rest, height, moves, "guard");
+
         Input.ActionRelease(InputActions.FightGuard);
         await WaitUntil(() => fighter.State == FighterState.Idle, 6, "idle after guard");
         await NextFrame();
@@ -393,6 +395,8 @@ public partial class Smoke
             Expect(root.GetNode<Node3D>(glove).Position.Y > rest[glove].Origin.Y + 0.005f, $"{stance} guard: {glove} is not higher than at rest");
         }
 
+        ExpectGuardCovers(root, rest, height, moves, $"{stance} guard");
+
         Input.ActionRelease(InputActions.FightGuard);
         await WaitUntil(() => fighter.State == FighterState.Idle, 6, "idle after guard");
         await NextFrame();
@@ -482,6 +486,35 @@ public partial class Smoke
         }
 
         return map;
+    }
+
+    /// <summary>
+    /// AC31 / AC33 on a Guarding player (faces +X): each glove is at least 0.8 x guardGloveRaiseH x H higher than at rest, its centre is
+    /// between the chin and the top of the head and 0.02 H to 0.20 H ahead of the head's front, and no limb stretches more than 15 percent.
+    /// </summary>
+    private static void ExpectGuardCovers(Node3D root, Dictionary<string, Transform3D> rest, float height, MoveSet moves, string when)
+    {
+        var head = root.GetNode<MeshInstance3D>("Head");
+        var headRy = ((SphereMesh)head.Mesh).Radius * head.Scale.Y;
+        var chin = head.Position.Y - headRy;
+        var top = head.Position.Y + headRy;
+        var front = head.Position.X + ((SphereMesh)head.Mesh).Radius;
+        foreach (var side in new[] { "L", "R" })
+        {
+            var glove = root.GetNode<Node3D>("Glove" + side);
+            var rise = glove.Position.Y - rest["Glove" + side].Origin.Y;
+            Expect(rise >= 0.8f * (float)moves.Visual.GuardGloveRaiseH * height - 0.001f, $"{when}: Glove{side} rose only {rise:0.000} m");
+            Expect(glove.Position.Y >= chin && glove.Position.Y <= top, $"{when}: Glove{side} height {glove.Position.Y:0.000} is outside the head span {chin:0.000}..{top:0.000}");
+            var ahead = glove.Position.X - front;
+            Expect(ahead >= 0.02f * height - 0.001f && ahead <= 0.20f * height + 0.001f, $"{when}: Glove{side} is {ahead:0.000} m ahead of the head front (height {height:0.00})");
+            Expect(Math.Sign(glove.Position.Z) == Math.Sign(rest["Glove" + side].Origin.Z), $"{when}: Glove{side} crossed the centre line ({glove.Position.Z:0.000} vs rest {rest["Glove" + side].Origin.Z:0.000})");
+            foreach (var limb in new[] { "UpperArm", "Forearm" })
+            {
+                var node = root.GetNode<Node3D>(limb + side);
+                var stretch = node.Transform.Basis.Y.Length() / rest[limb + side].Basis.Y.Length();
+                Expect(Math.Abs(stretch - 1f) <= 0.15f, $"{when}: {limb}{side} length changed by {stretch:0.00}x");
+            }
+        }
     }
 
     private static void ExpectPoseAtRest(Node3D root, Dictionary<string, Transform3D> rest, string when)
