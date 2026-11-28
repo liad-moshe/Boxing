@@ -1,0 +1,1 @@
+- 2026-11-28 playtest-feedback: PR #13 items 1-2 (item 1 boxing answer, item 2 guard pose fix on branch)
