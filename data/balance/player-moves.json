@@ -18,8 +18,15 @@
       "reachM": 1.25,
       "cancelInto": []
     },
-    "slip": {
-      "_comment": "3/15/12 ticks = 0.05 s / 0.25 s / 0.20 s, total 0.50 s. Evading only during active. Recovery can be cancelled into a punch (counter). No source gives real slip durations: tuning values.",
+    "slipLeft": {
+      "_comment": "Slip to the boxer's own left (away from the side-on camera). Key Q. 3/15/12 ticks = 0.05 s / 0.25 s / 0.20 s, total 0.50 s. Evading only during active. Recovery can be cancelled into a punch (counter) but not into another slip. No source gives real slip durations: tuning values. Same as slipRight on purpose; separate entry so the two sides can be tuned apart later.",
+      "startupFrames": 3,
+      "activeFrames": 15,
+      "recoveryFrames": 12,
+      "cancelInto": ["jab", "cross"]
+    },
+    "slipRight": {
+      "_comment": "Slip to the boxer's own right (toward the side-on camera). Key E. Same timings as slipLeft (see there).",
       "startupFrames": 3,
       "activeFrames": 15,
       "recoveryFrames": 12,
@@ -42,12 +49,13 @@
     "contactTextFrames": 45
   },
   "visual": {
-    "_comment": "Pose offsets for the code-driven move animation, fractions of fighter height (H) or width (W) as in fighters.json body. Developer may tune within about 30 percent so the move reads well; tune punchExtendH so a punch at gap == reach visibly reaches the opponent.",
+    "_comment": "Pose offsets for the code-driven move animation, fractions of fighter height (H) or width (W) as in fighters.json body. Developer may tune within about 30 percent so the move reads well; tune punchExtendH so a punch at gap == reach visibly reaches the opponent. Slip (both sides): slipHeadDropH = upper-body dip (same for both sides); slipLeanDeg = roll toward the chosen side about the facing axis (head moves toward the camera for slipRight, away for slipLeft); slipTurnDeg = shoulder turn about the vertical axis, opposite sign for the two sides, so the side reads from the side-on camera.",
     "punchExtendH": 0.30,
     "crossTorsoTurnDeg": 25,
     "guardGloveRaiseH": 0.04,
     "guardGloveInwardW": 0.15,
     "slipHeadDropH": 0.07,
-    "slipLeanDeg": 18
+    "slipLeanDeg": 18,
+    "slipTurnDeg": 20
   }
 }
