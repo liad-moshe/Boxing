@@ -28,3 +28,10 @@ G1 G2 G3 G4
 M1 scope, no external assets. Files likely touched: data/balance/player-moves.json, project.godot [input],
 src/Core/MoveSet.cs, PlayerFighter.cs, game/scripts/{InputActions,FightController,FighterAnimator}.cs,
 docs/specs/player-controls.md, docs/kb/*, tests/Core.Tests.
+
+## Client decision (G2, 2026-11-28) — scope change
+Client rejected the 4-key design (rear-hand jab / lead-hand cross are not real boxing). New scope: keep
+two punch keys (jab, cross). Jab = lead hand, cross = rear hand; which glove that is depends on the
+boxer's STANCE. Stance is set per boxer in Character Select (option 2): orthodox or southpaw. Mirrored
+animation for southpaw. No in-fight stance switch (later task). Previous 4-key draft and 2x2 grid are dropped.
+Model override: game-designer · opus · rule (a) · 2026-11-28 (spec rewrite for new mechanic scope).
