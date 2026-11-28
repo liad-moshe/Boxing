@@ -6,3 +6,4 @@
 - 2026-11-28 G2 answers from client: guard on S; arrows also move (Left/Right); separate slip left/right. Spec update delegated to game-designer
 - 2026-11-28 game-designer (client key decisions): DONE — slip Q/E, arrows added; awaiting client confirm of final key map (G2)
 - 2026-11-28 G2: client CONFIRMED spec; arrows-for-walking dropped (A/D only), Q/E boxer-relative slips kept
+- 2026-11-28 game-designer (final): DONE — arrows removed, spec APPROVED (G2). 7 fight keys + Esc
