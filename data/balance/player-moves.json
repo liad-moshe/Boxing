@@ -1,0 +1,53 @@
+{
+  "_comment": "Player moves and movement for the fight scene (issue #10, spec docs/specs/player-controls.md). Timings are whole simulation ticks at tickRate (60 ticks = 1 second; seconds in each _comment are for humans only). Distances are metres along the side-on X axis, measured between fighter root positions. All values are GAMEPLAY ABSTRACTION starting points pending boxing-consultant review, not measured boxing data.",
+  "tickRate": 60,
+  "moves": {
+    "jab": {
+      "_comment": "Lead hand. 6/3/9 ticks = 0.10 s / 0.05 s / 0.15 s, total 0.30 s.",
+      "startupFrames": 6,
+      "activeFrames": 3,
+      "recoveryFrames": 9,
+      "reachM": 1.10,
+      "cancelInto": ["cross"]
+    },
+    "cross": {
+      "_comment": "Rear hand. 10/4/16 ticks = 0.17 s / 0.07 s / 0.27 s, total 0.50 s. Slower and more committed than the jab, slightly longer reach.",
+      "startupFrames": 10,
+      "activeFrames": 4,
+      "recoveryFrames": 16,
+      "reachM": 1.25,
+      "cancelInto": []
+    },
+    "slip": {
+      "_comment": "3/15/12 ticks = 0.05 s / 0.25 s / 0.20 s, total 0.50 s. Evading only during active. Recovery can be cancelled into a punch (counter).",
+      "startupFrames": 3,
+      "activeFrames": 15,
+      "recoveryFrames": 12,
+      "cancelInto": ["jab", "cross"]
+    }
+  },
+  "guard": {
+    "_comment": "Hold to guard. 4 ticks = 0.07 s before blocking counts. Walking speed is multiplied while guard is raising or up.",
+    "raiseFrames": 4,
+    "moveSpeedMultiplier": 0.6
+  },
+  "movement": {
+    "_comment": "Walk speed in m/s. minX is the furthest the player can back up (must be <= fighters.json ring.playerX and on the visible floor). minSeparationM is the closest the player's root may get to the opponent's root.",
+    "walkSpeedMps": 1.6,
+    "minX": -2.8,
+    "minSeparationM": 0.75
+  },
+  "feedback": {
+    "_comment": "On-screen 'Contact: Jab/Cross' text duration. 45 ticks = 0.75 s.",
+    "contactTextFrames": 45
+  },
+  "visual": {
+    "_comment": "Pose offsets for the code-driven move animation, fractions of fighter height (H) or width (W) as in fighters.json body. Developer may tune within about 30 percent so the move reads well; tune punchExtendH so a punch at gap == reach visibly reaches the opponent.",
+    "punchExtendH": 0.30,
+    "crossTorsoTurnDeg": 25,
+    "guardGloveRaiseH": 0.04,
+    "guardGloveInwardW": 0.15,
+    "slipHeadDropH": 0.07,
+    "slipLeanDeg": 18
+  }
+}
