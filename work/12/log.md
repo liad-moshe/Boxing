@@ -2,3 +2,4 @@
 - 2026-11-28 game-designer: DONE — guard pose spec (raise 0.04->0.11, new keys guardGloveBackH/ElbowRaiseShare/ElbowInwardShare, AC31-AC34)
 - 2026-11-28 boxing-consultant: DONE — slip answer: either hand after a slip is real; keep as GAMEPLAY ABSTRACTION in M1; no restriction now
 - 2026-11-28 boxing-consultant: DONE — guard check: eye-level gloves OK as tuning, elbows OK, 'forearms covering' unsourced, readability abstraction fair
+- 2026-11-28 game-designer: DONE — guard boxing wording applied (spec only)
