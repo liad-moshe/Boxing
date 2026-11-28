@@ -1,1 +1,2 @@
 - 2026-11-28 intake: route table (new combat mechanic) — designer(opus) → boxing → developer → qa → kb; tech-artist skipped (M1)
+- 2026-11-28 G1: client approved full route (designer opus, boxing, developer, qa, kb)
