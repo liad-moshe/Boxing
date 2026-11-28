@@ -13,6 +13,7 @@ public partial class FightController : Node
     public const string HintText = "A / D  move    J  jab    K  cross    S  guard (hold)    Q / E  slip left / right    Esc  menu";
 
     private MoveSet _moves = null!;
+    private Stance _stance;
     private Node3D _playerRoot = null!;
     private FighterAnimator _animator = null!;
     private ContactBanner _banner = null!;
@@ -29,13 +30,14 @@ public partial class FightController : Node
     public Label HintLabel => _hintLabel;
 
     /// <summary>Call before adding the node to the tree.</summary>
-    public void Setup(Node3D playerRoot, FighterDef player, FighterRoster roster, MoveSet moves)
+    public void Setup(Node3D playerRoot, FighterDef player, FighterRoster roster, MoveSet moves, Stance stance)
     {
         _moves = moves;
+        _stance = stance;
         _playerRoot = playerRoot;
         Fighter = new PlayerFighter(moves, roster.PlayerX, roster.OpponentX);
         _banner = new ContactBanner(moves.ContactTextFrames);
-        _animator = new FighterAnimator(playerRoot, player, roster, moves, 1f);
+        _animator = new FighterAnimator(playerRoot, player, roster, moves, 1f, stance);
     }
 
     public override void _Ready()
@@ -83,7 +85,7 @@ public partial class FightController : Node
         position.X = (float)Fighter.X;
         _playerRoot.Position = position;
 
-        _animator.Apply(PoseBlend.From(Fighter, _moves));
+        _animator.Apply(PoseBlend.From(Fighter, _moves, _stance));
 
         _contactLabel.Text = _banner.Text;
         _contactLabel.Visible = _banner.IsVisible;

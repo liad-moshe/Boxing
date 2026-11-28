@@ -50,15 +50,18 @@ public partial class Main : Node3D
         var roster = GameSession.Roster;
         var player = roster.FindOrFirst(GameSession.PlayerId);
         var opponent = roster.FindOrFirst(GameSession.OpponentId);
-        AddChild(FighterBuilder.Build("PlayerFighter", player, roster, "YOU", 1f));
-        AddChild(FighterBuilder.Build("OpponentFighter", opponent, roster, "CPU", -1f));
+        var moves = GameSession.Moves;
+        var playerStance = GameSession.PlayerStance ?? moves.DefaultStance;
+        var opponentStance = GameSession.OpponentStance ?? moves.DefaultStance;
+        AddChild(FighterBuilder.Build("PlayerFighter", player, roster, $"YOU ({StanceRules.DisplayName(playerStance)})", 1f, playerStance));
+        AddChild(FighterBuilder.Build("OpponentFighter", opponent, roster, $"CPU ({StanceRules.DisplayName(opponentStance)})", -1f, opponentStance));
         var playerRoot = GetNode<Node3D>("PlayerFighter");
         playerRoot.Position = new Vector3((float)roster.PlayerX, 0f, 0f);
         GetNode<Node3D>("OpponentFighter").Position = new Vector3((float)roster.OpponentX, 0f, 0f);
 
         // The ring is the fight: the player's boxer is controllable from the first physics tick; the opponent stays idle.
         var fight = new FightController { Name = "Fight" };
-        fight.Setup(playerRoot, player, roster, GameSession.Moves);
+        fight.Setup(playerRoot, player, roster, moves, playerStance);
         AddChild(fight);
     }
 

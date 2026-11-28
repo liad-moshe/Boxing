@@ -8,7 +8,7 @@ namespace Boxing.Game;
 /// Poses the existing primitive boxer parts from a <see cref="PoseBlend"/> (guard, jab, cross, slips).
 /// Code-driven only: no AnimationPlayer, no assets. The blend amounts come from Boxing.Core; the offsets come
 /// from the data file's <see cref="VisualTuning"/>. At an all-zero blend every part is restored to the exact
-/// pose it was built in. The lead glove is <c>GloveL</c> (orthodox: left foot and left hand lead).
+/// pose it was built in. Parts are anatomical (<c>GloveL</c> is always the left glove); the stance decides which arm gets the cross's extra reach.
 /// </summary>
 public sealed class FighterAnimator
 {
@@ -18,20 +18,18 @@ public sealed class FighterAnimator
     /// <summary>The punching shoulder drives forward by this fraction of the glove's extension.</summary>
     private const float ShoulderShare = 0.25f;
 
-    /// <summary>How far the elbow drops/moves with the glove in guard, as a fraction of the glove's move.</summary>
-    private const float GuardElbowShare = 0.5f;
-
     private readonly MoveSet _moves;
     private readonly float _facing;
     private readonly float _height;
     private readonly float _width;
     private readonly float _pivotY;
     private readonly (Node3D Node, Transform3D Home)[] _upper;
-    private readonly Arm _lead;
-    private readonly Arm _rear;
-    private readonly float _crossExtraReach;
+    private readonly Arm _left;
+    private readonly Arm _right;
+    private readonly float _leftExtraReach;
+    private readonly float _rightExtraReach;
 
-    public FighterAnimator(Node3D root, FighterDef fighter, FighterRoster roster, MoveSet moves, float facing)
+    public FighterAnimator(Node3D root, FighterDef fighter, FighterRoster roster, MoveSet moves, float facing, Stance stance)
     {
         _moves = moves;
         _facing = facing;
@@ -47,9 +45,12 @@ public sealed class FighterAnimator
         }
 
         // One punchExtendH serves both punches, so the cross's glove travels further by exactly its extra reach (metres).
-        _crossExtraReach = (float)(moves.Get(FighterState.Cross).ReachM - moves.Get(FighterState.Jab).ReachM);
-        _lead = new Arm(root, "L");
-        _rear = new Arm(root, "R");
+        var crossExtra = (float)(moves.Get(FighterState.Cross).ReachM - moves.Get(FighterState.Jab).ReachM);
+        var crossLeft = StanceRules.PunchSide(FighterState.Cross, stance) == BodySide.Left;
+        _leftExtraReach = crossLeft ? crossExtra : 0f;
+        _rightExtraReach = crossLeft ? 0f : crossExtra;
+        _left = new Arm(root, "L");
+        _right = new Arm(root, "R");
     }
 
     public void Apply(PoseBlend pose)
@@ -66,7 +67,7 @@ public sealed class FighterAnimator
         // Upper-body transform: dip, then lean about the facing axis, then turn about the vertical (spine) axis.
         var slip = (float)pose.Slip;
         var slipSign = pose.SlipSide == EvadeSide.Right ? 1f : pose.SlipSide == EvadeSide.Left ? -1f : 0f;
-        var yaw = Mathf.DegToRad(((float)v.CrossTorsoTurnDeg * (float)pose.RearExtend) + ((float)v.SlipTurnDeg * slip * slipSign));
+        var yaw = Mathf.DegToRad(((float)v.CrossTorsoTurnDeg * (float)pose.TorsoTurn) + ((float)v.SlipTurnDeg * slip * slipSign));
         var roll = Mathf.DegToRad((float)v.SlipLeanDeg * slip * slipSign * _facing);
         var rotation = new Basis(Vector3.Right, roll) * new Basis(Vector3.Up, yaw);
         var pivot = new Vector3(0f, _pivotY, 0f);
@@ -78,8 +79,8 @@ public sealed class FighterAnimator
             node.Transform = upper * home;
         }
 
-        PoseArm(_lead, (float)pose.LeadExtend, 0f, (float)pose.Guard, fwd, upper);
-        PoseArm(_rear, (float)pose.RearExtend, _crossExtraReach, (float)pose.Guard, fwd, upper);
+        PoseArm(_left, (float)pose.LeftExtend, _leftExtraReach, (float)pose.Guard, fwd, upper);
+        PoseArm(_right, (float)pose.RightExtend, _rightExtraReach, (float)pose.Guard, fwd, upper);
     }
 
     private void Restore()
@@ -89,25 +90,34 @@ public sealed class FighterAnimator
             node.Transform = home;
         }
 
-        _lead.Restore();
-        _rear.Restore();
+        _left.Restore();
+        _right.Restore();
     }
 
     private void PoseArm(Arm arm, float extend, float extraReach, float guard, Vector3 fwd, Transform3D upper)
     {
         var v = _moves.Visual;
 
-        // Guard: glove up and inward (toward the centre line) by blend; the elbow follows part of the way.
-        var raise = new Vector3(0f, (float)v.GuardGloveRaiseH * _height * guard, 0f);
-        var inward = new Vector3(0f, 0f, -Math.Sign(arm.Wrist.Z) * (float)v.GuardGloveInwardW * _width * guard);
-        var guardMove = raise + inward;
+        // Guard (numbers from Core): glove up, pulled back toward the face and inward; the elbow follows by shares.
+        var (gloveOffset, elbowOffset) = GuardMove.Offsets(v, _height, _width, guard);
+        var inwardSign = -Math.Sign(arm.Wrist.Z);
+        Vector3 ToNode(GuardOffset o) => new(_facing * (float)o.Forward, (float)o.Up, inwardSign * (float)o.Inward);
+        var guardMove = ToNode(gloveOffset);
 
         // Punch: glove straight toward the opponent; the shoulder drives forward a little; the arm straightens.
         var punch = fwd * (((float)v.PunchExtendH * _height) + extraReach) * extend;
 
         var shoulder = arm.Shoulder + (punch * ShoulderShare);
         var wrist = arm.Wrist + guardMove + punch;
-        var elbow = arm.Elbow + (guardMove * GuardElbowShare);
+        var elbow = arm.Elbow + ToNode(elbowOffset);
+        if (guard > 0f)
+        {
+            // Keep both limbs at their built length: of the elbows that fit, take the one nearest the data's hint.
+            var (fixedElbow, fixedWrist) = TwoBoneArm.Solve(ToVec(shoulder), ToVec(wrist), arm.UpperLength, arm.ForeLength, ToVec(elbow));
+            elbow = new Vector3((float)fixedElbow.X, (float)fixedElbow.Y, (float)fixedElbow.Z);
+            wrist = new Vector3((float)fixedWrist.X, (float)fixedWrist.Y, (float)fixedWrist.Z);
+        }
+
         var straight = shoulder + ((wrist - shoulder) * (arm.UpperLength / (arm.UpperLength + arm.ForeLength)));
         elbow = elbow.Lerp(straight, extend);
 
@@ -124,6 +134,8 @@ public sealed class FighterAnimator
         arm.ForeNode.Transform = Limb(upper * elbow, upper * wrist, arm.ForeLength);
         arm.GloveNode.Transform = new Transform3D(upper.Basis * delta * arm.GloveRest.Basis, upper * glovePos);
     }
+
+    private static Vec3 ToVec(Vector3 v) => new(v.X, v.Y, v.Z);
 
     /// <summary>A cylinder limb from <paramref name="from"/> to <paramref name="to"/>, stretched along its own axis from its built length.</summary>
     private static Transform3D Limb(Vector3 from, Vector3 to, float restLength)

@@ -13,6 +13,8 @@ public partial class CharacterSelect : Control
 
     private static readonly StringName ConfirmAction = "menu_confirm";
     private static readonly StringName BackAction = "ui_back";
+    private static readonly StringName UpAction = "menu_up";
+    private static readonly StringName DownAction = "menu_down";
 
     private static readonly Color BackgroundColor = new(0.08f, 0.10f, 0.14f);
     private static readonly Color HeaderColor = new(0.92f, 0.92f, 0.95f);
@@ -32,13 +34,14 @@ public partial class CharacterSelect : Control
     private Label[] _youTags = System.Array.Empty<Label>();
     private Label _header = null!;
     private Label _youLine = null!;
+    private Label _stanceLine = null!;
     private bool _leaving;
     private bool _mouseMoved;
     private ulong _lastStepMs;
 
     public CharacterSelect()
     {
-        _flow = new CharacterSelectFlow(_roster);
+        _flow = new CharacterSelectFlow(_roster, GameSession.Moves.DefaultStance);
         _selection = new MenuSelection(_roster.Fighters.Count);
     }
 
@@ -77,6 +80,14 @@ public partial class CharacterSelect : Control
             row.AddChild(_cards[i]);
         }
 
+        // One stance line for the boxer picked in the current step. A Label never takes keyboard focus, so Enter
+        // still confirms the highlighted card; it only listens to mouse clicks.
+        _stanceLine = MakeLabel("StanceLine", string.Empty, 24, HeaderColor);
+        _stanceLine.MouseFilter = MouseFilterEnum.Stop;
+        _stanceLine.FocusMode = FocusModeEnum.None;
+        _stanceLine.GuiInput += OnStanceLineInput;
+        column.AddChild(_stanceLine);
+
         column.AddChild(MakeLabel("Hint", "Left / Right: choose    Enter or click: confirm    Esc: back", 18, DimText));
 
         _selection.Hover(_roster.DefaultHighlightIndex);
@@ -105,6 +116,12 @@ public partial class CharacterSelect : Control
         {
             _selection.MoveDown();
             Refresh();
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed(UpAction) || @event.IsActionPressed(DownAction))
+        {
+            // Fresh press only (echo ignored), so a held Up or Down toggles once.
+            ToggleStance();
             GetViewport().SetInputAsHandled();
         }
         else if (@event.IsActionPressed(ConfirmAction))
@@ -237,6 +254,24 @@ public partial class CharacterSelect : Control
         }
     }
 
+    private void OnStanceLineInput(InputEvent @event)
+    {
+        if (@event is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left, DoubleClick: false })
+        {
+            ToggleStance();
+        }
+    }
+
+    private void ToggleStance()
+    {
+        if (_leaving || !_flow.ToggleStance())
+        {
+            return;
+        }
+
+        Refresh();
+    }
+
     private void Confirm(int index)
     {
         if (_leaving)
@@ -256,6 +291,8 @@ public partial class CharacterSelect : Control
             _leaving = true;
             GameSession.PlayerId = _flow.PlayerId;
             GameSession.OpponentId = _flow.OpponentId;
+            GameSession.PlayerStance = _flow.PlayerStance;
+            GameSession.OpponentStance = _flow.OpponentStance;
             GetTree().ChangeSceneToFile(ScenePaths.Ring);
             return;
         }
@@ -287,7 +324,9 @@ public partial class CharacterSelect : Control
         _header.Text = pickingOpponent ? "Choose your opponent" : "Choose your boxer";
         _youLine.Visible = pickingOpponent;
         var playerIndex = _flow.PlayerId is null ? -1 : _roster.IndexOf(_flow.PlayerId);
-        _youLine.Text = pickingOpponent && playerIndex >= 0 ? $"You: {_roster.Fighters[playerIndex].Name}" : string.Empty;
+        _youLine.Text = pickingOpponent && playerIndex >= 0 ? $"You: {_roster.Fighters[playerIndex].Name} ({StanceRules.DisplayName(_flow.PlayerStance)})" : string.Empty;
+        var shown = pickingOpponent ? _flow.OpponentStance : _flow.PlayerStance;
+        _stanceLine.Text = $"Stance: {StanceRules.DisplayName(shown)}   (Up / Down to change)";
 
         for (var i = 0; i < _cards.Length; i++)
         {

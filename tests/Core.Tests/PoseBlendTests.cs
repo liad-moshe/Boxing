@@ -12,10 +12,10 @@ public class PoseBlendTests
     [Fact]
     public void Idle_IsAllZero()
     {
-        var pose = PoseBlend.From(NewFighter(), Moves);
+        var pose = PoseBlend.From(NewFighter(), Moves, Stance.Orthodox);
 
-        Assert.Equal(0, pose.LeadExtend);
-        Assert.Equal(0, pose.RearExtend);
+        Assert.Equal(0, pose.LeftExtend);
+        Assert.Equal(0, pose.RightExtend);
         Assert.Equal(0, pose.Guard);
         Assert.Equal(0, pose.Slip);
         Assert.Equal(EvadeSide.None, pose.SlipSide);
@@ -30,29 +30,29 @@ public class PoseBlendTests
         var previous = 0.0;
         for (var i = 1; i <= def.StartupFrames; i++)
         {
-            var pose = PoseBlend.From(f, Moves);
-            Assert.True(pose.LeadExtend > previous);
-            Assert.Equal(0, pose.RearExtend);
-            previous = pose.LeadExtend;
+            var pose = PoseBlend.From(f, Moves, Stance.Orthodox);
+            Assert.True(pose.LeftExtend > previous);
+            Assert.Equal(0, pose.RightExtend);
+            previous = pose.LeftExtend;
             f.Tick(default);
         }
 
         Assert.Equal(1.0, previous, precision: 9);
         for (var i = 1; i <= def.ActiveFrames; i++)
         {
-            Assert.Equal(1.0, PoseBlend.From(f, Moves).LeadExtend);
+            Assert.Equal(1.0, PoseBlend.From(f, Moves, Stance.Orthodox).LeftExtend);
             f.Tick(default);
         }
 
         for (var i = 1; i <= def.RecoveryFrames; i++)
         {
-            var value = PoseBlend.From(f, Moves).LeadExtend;
+            var value = PoseBlend.From(f, Moves, Stance.Orthodox).LeftExtend;
             Assert.InRange(value, 0.0001, previous - 0.0001);
             previous = value;
             f.Tick(default);
         }
 
-        Assert.Equal(0, PoseBlend.From(f, Moves).LeadExtend);
+        Assert.Equal(0, PoseBlend.From(f, Moves, Stance.Orthodox).LeftExtend);
     }
 
     [Fact]
@@ -65,10 +65,10 @@ public class PoseBlendTests
             f.Tick(default);
         }
 
-        var pose = PoseBlend.From(f, Moves);
+        var pose = PoseBlend.From(f, Moves, Stance.Orthodox);
 
-        Assert.Equal(1.0, pose.RearExtend);
-        Assert.Equal(0, pose.LeadExtend);
+        Assert.Equal(1.0, pose.RightExtend);
+        Assert.Equal(0, pose.LeftExtend);
     }
 
     [Fact]
@@ -80,14 +80,14 @@ public class PoseBlendTests
         for (var i = 1; i <= raise; i++)
         {
             f.Tick(hold);
-            Assert.Equal(i / (double)raise, PoseBlend.From(f, Moves).Guard, precision: 9);
+            Assert.Equal(i / (double)raise, PoseBlend.From(f, Moves, Stance.Orthodox).Guard, precision: 9);
         }
 
         f.Tick(hold);
-        Assert.Equal(1.0, PoseBlend.From(f, Moves).Guard);
+        Assert.Equal(1.0, PoseBlend.From(f, Moves, Stance.Orthodox).Guard);
 
         f.Tick(default);
-        Assert.Equal(0, PoseBlend.From(f, Moves).Guard);
+        Assert.Equal(0, PoseBlend.From(f, Moves, Stance.Orthodox).Guard);
     }
 
     [Theory]
@@ -101,9 +101,9 @@ public class PoseBlendTests
         var peak = 0.0;
         for (var i = 1; i <= def.TotalFrames; i++)
         {
-            var pose = PoseBlend.From(f, Moves);
+            var pose = PoseBlend.From(f, Moves, Stance.Orthodox);
             Assert.Equal(side, pose.SlipSide);
-            Assert.Equal(0, pose.LeadExtend);
+            Assert.Equal(0, pose.LeftExtend);
             Assert.InRange(pose.Slip, 0.0001, 1.0);
             peak = System.Math.Max(peak, pose.Slip);
             if (i > def.StartupFrames && i <= def.StartupFrames + def.ActiveFrames)
@@ -115,7 +115,7 @@ public class PoseBlendTests
         }
 
         Assert.Equal(1.0, peak);
-        var idle = PoseBlend.From(f, Moves);
+        var idle = PoseBlend.From(f, Moves, Stance.Orthodox);
         Assert.Equal(0, idle.Slip);
         Assert.Equal(EvadeSide.None, idle.SlipSide);
     }

@@ -12,7 +12,8 @@ namespace Boxing.Game;
 public static class FighterBuilder
 {
     /// <param name="facing">+1 faces +X, -1 faces -X.</param>
-    public static Node3D Build(string nodeName, FighterDef fighter, FighterRoster roster, string tag, float facing)
+    /// <param name="stance">Orthodox: the left foot leads. Southpaw: the right foot leads (the guard itself is left/right symmetric).</param>
+    public static Node3D Build(string nodeName, FighterDef fighter, FighterRoster roster, string tag, float facing, Stance stance)
     {
         var look = fighter.Look;
         var b = roster.Body;
@@ -51,7 +52,7 @@ public static class FighterBuilder
         {
             var suffix = side < 0 ? "L" : "R";
             var zSign = side * facing;
-            var leadForward = side < 0 ? W("stanceLeadFootForwardW") : 0f;
+            var leadForward = (side < 0 ? BodySide.Left : BodySide.Right) == StanceRules.LeadSide(stance) ? W("stanceLeadFootForwardW") : 0f;
             var hip = new Vector3(0f, hipY, zSign * hipHalf);
             var ankle = new Vector3(facing * leadForward, footH, zSign * footHalf);
             var knee = ((hip + ankle) * 0.5f) + new Vector3(facing * h * 0.03f, 0f, 0f);

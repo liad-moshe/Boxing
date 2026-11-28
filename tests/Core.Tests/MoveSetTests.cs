@@ -181,4 +181,36 @@ public class MoveSetTests
 
         Assert.Contains("slipLeanDeg", ex.Message);
     }
+
+    [Fact]
+    public void GuardVisualKeys_AreRead_AndGloveRaiseIsVisible()
+    {
+        var visual = TestData.Moves().Visual;
+
+        Assert.True(visual.GuardGloveRaiseH >= 0.08);
+        Assert.True(visual.GuardGloveBackH >= 0);
+        Assert.True(visual.GuardElbowRaiseShare >= 0);
+        Assert.True(visual.GuardElbowInwardShare >= 0);
+    }
+
+    [Theory]
+    [InlineData("guardGloveBackH")]
+    [InlineData("guardElbowRaiseShare")]
+    [InlineData("guardElbowInwardShare")]
+    public void NewGuardKey_MissingOrNegative_Throws_NamingTheKey(string key)
+    {
+        var missing = TestData.Edited(r => ((JsonObject)r["visual"]!).Remove(key));
+        var negative = TestData.Edited(r => r["visual"]![key] = -0.1);
+
+        Assert.Contains(key, Assert.Throws<MoveDataException>(() => Parse(missing)).Message);
+        Assert.Contains(key, Assert.Throws<MoveDataException>(() => Parse(negative)).Message);
+    }
+
+    [Fact]
+    public void GuardGloveRaise_BelowMinimum_Throws_NamingTheKey()
+    {
+        var text = TestData.Edited(r => r["visual"]!["guardGloveRaiseH"] = 0.04);
+
+        Assert.Contains("guardGloveRaiseH", Assert.Throws<MoveDataException>(() => Parse(text)).Message);
+    }
 }
