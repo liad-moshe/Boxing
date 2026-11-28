@@ -7,3 +7,4 @@
 - 2026-11-28 game-designer (client key decisions): DONE — slip Q/E, arrows added; awaiting client confirm of final key map (G2)
 - 2026-11-28 G2: client CONFIRMED spec; arrows-for-walking dropped (A/D only), Q/E boxer-relative slips kept
 - 2026-11-28 game-designer (final): DONE — arrows removed, spec APPROVED (G2). 7 fight keys + Esc
+- 2026-11-28 developer: DONE — build/tests (141)/smoke pass; ~2.3k lines (already mechanic route, G1 done, no re-ask needed)

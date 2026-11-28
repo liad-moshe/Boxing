@@ -4,8 +4,9 @@ using Godot;
 namespace Boxing.Game;
 
 /// <summary>
-/// Pipeline-proof main scene. Builds a primitive ring floor, a side-on camera and a light entirely from
-/// code (no external assets), runs a <see cref="RoundClock"/> from Boxing.Core, and returns to the menu on ui_back.
+/// The ring and fight scene. Builds a primitive ring floor, a side-on camera and a light entirely from
+/// code (no external assets), runs a <see cref="RoundClock"/> from Boxing.Core, hosts the playable fight
+/// (<see cref="FightController"/>) and returns to the menu on ui_back.
 /// </summary>
 public partial class Main : Node3D
 {
@@ -51,8 +52,14 @@ public partial class Main : Node3D
         var opponent = roster.FindOrFirst(GameSession.OpponentId);
         AddChild(FighterBuilder.Build("PlayerFighter", player, roster, "YOU", 1f));
         AddChild(FighterBuilder.Build("OpponentFighter", opponent, roster, "CPU", -1f));
-        GetNode<Node3D>("PlayerFighter").Position = new Vector3((float)roster.PlayerX, 0f, 0f);
+        var playerRoot = GetNode<Node3D>("PlayerFighter");
+        playerRoot.Position = new Vector3((float)roster.PlayerX, 0f, 0f);
         GetNode<Node3D>("OpponentFighter").Position = new Vector3((float)roster.OpponentX, 0f, 0f);
+
+        // The ring is the fight: the player's boxer is controllable from the first physics tick; the opponent stays idle.
+        var fight = new FightController { Name = "Fight" };
+        fight.Setup(playerRoot, player, roster, GameSession.Moves);
+        AddChild(fight);
     }
 
     public override void _Process(double delta)

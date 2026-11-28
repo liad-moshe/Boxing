@@ -50,7 +50,7 @@
   },
   "visual": {
     "_comment": "Pose offsets for the code-driven move animation, fractions of fighter height (H) or width (W) as in fighters.json body. Developer may tune within about 30 percent so the move reads well; tune punchExtendH so a punch at gap == reach visibly reaches the opponent. Slip (both sides): slipHeadDropH = upper-body dip (same for both sides); slipLeanDeg = roll toward the chosen side about the facing axis (head moves toward the camera for slipRight, away for slipLeft); slipTurnDeg = shoulder turn about the vertical axis, opposite sign for the two sides, so the side reads from the side-on camera.",
-    "punchExtendH": 0.30,
+    "punchExtendH": 0.24,
     "crossTorsoTurnDeg": 25,
     "guardGloveRaiseH": 0.04,
     "guardGloveInwardW": 0.15,

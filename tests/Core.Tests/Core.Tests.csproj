@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <None Include="../../data/balance/fighters.json" Link="data/fighters.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../data/balance/player-moves.json" Link="data/player-moves.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

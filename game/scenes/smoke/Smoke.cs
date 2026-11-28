@@ -6,7 +6,8 @@ using Godot;
 namespace Boxing.Game.Smoke;
 
 /// <summary>
-/// Headless smoke test: instantiates Main.tscn, runs ~120 physics frames, checks Main is still in the tree.
+/// Headless smoke test: instantiates Main.tscn, runs ~120 physics frames, checks Main is still in the tree,
+/// then plays a scripted fight with the fight keys (SmokeFight.cs).
 /// Exit code 0 = pass, 1 = fail. Run: godot --headless --path . res://game/scenes/smoke/Smoke.tscn
 /// </summary>
 public partial class Smoke : Node
@@ -17,6 +18,7 @@ public partial class Smoke : Node
     private Node? _main;
     private int _frames;
     private bool _finished;
+    private bool _scriptStarted;
 
     public override void _Ready()
     {
@@ -83,7 +85,7 @@ public partial class Smoke : Node
         try
         {
             _frames++;
-            if (_frames < FramesToRun)
+            if (_frames < FramesToRun || _scriptStarted)
             {
                 return;
             }
@@ -113,9 +115,9 @@ public partial class Smoke : Node
                 return;
             }
 
-            _finished = true;
-            GD.Print($"SMOKE: PASS after {_frames} physics frames");
-            GetTree().Quit(0);
+            // The look checks passed; now play the fight (SmokeFight.cs), which prints PASS and quits on success.
+            _scriptStarted = true;
+            RunFightScript();
         }
         catch (Exception ex)
         {
