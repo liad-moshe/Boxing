@@ -1,1 +1,2 @@
 - 2026-11-28 playtest-feedback: PR #13 items 1-2 (item 1 boxing answer, item 2 guard pose fix on branch)
+- 2026-11-28 game-designer: DONE — guard pose spec (raise 0.04->0.11, new keys guardGloveBackH/ElbowRaiseShare/ElbowInwardShare, AC31-AC34)
