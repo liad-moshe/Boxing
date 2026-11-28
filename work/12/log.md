@@ -5,3 +5,4 @@
 - 2026-11-28 client: G2 rescope — stance-based hands, stance chosen in Character Select (option 2); 4-key draft dropped
 - 2026-11-28 game-designer: DONE — spec rewritten for stance (J jab lead, K cross rear; Up/Down stance in Char Select); 7 boxing questions
 - 2026-11-28 boxing-consultant: DONE — 5 CHANGEs (cite S10 alone for southpaw, scope 'both stances' claim, add S11), rest OK/ABSTRACTION
+- 2026-11-28 game-designer: DONE — boxing CHANGEs applied, stance spec READY FOR G2

@@ -1,11 +1,11 @@
 # Spec: Player controls (playable fight, idle opponent)
 
-Status: DRAFT (issue #12 amendment: stance; the issue #10 version was APPROVED by the client at G2, 2026-11-28)   Issue: #12 (amends #10)
+Status: READY FOR G2 (issue #12 amendment: stance; the issue #10 version was APPROVED by the client at G2, 2026-11-28)   Issue: #12 (amends #10)
 
 ## What changed for issue #12
 The client rejected the earlier 4-key draft. This version keeps the two punch keys of #10 and adds **stance**.
 - **Keys unchanged:** J = jab, K = cross, exactly as on main. No new fight key, no renamed action.
-- **Jab = lead hand, cross = rear hand**, as in real boxing [S10]. Which glove that is depends on the boxer's stance: **orthodox** (left hand and left foot lead) or **southpaw** (the mirror: right hand and right foot lead) [S10][S3].
+- **Jab = lead hand, cross = rear hand**, as in real boxing [S10]. Which glove that is depends on the boxer's stance: **orthodox** (left hand and left foot lead) or **southpaw** (the mirror: right hand and right foot lead) [S10].
 - **Stance is chosen per boxer in Character Select**, in each of the two steps, with Up / Down (the existing `menu_up` / `menu_down` actions, so no new key) or a mouse click on the stance line. Default: `stance.default` (orthodox). See "Stance choice (Character Select)" and the amendment in docs/specs/character-select.md.
 - **Southpaw is a mirror:** mirrored build, mirrored punch animation and mirrored cross torso turn. **Same tick timings, reach, cancels and priority** in both stances.
 - Walking, guard, slips (boxer-relative sides), the one-two cancel, slip-recovery cancels, no input buffer and the contact rule are **unchanged from #10**.
@@ -54,7 +54,7 @@ All bound by **physical keycode** in the `[input]` section of project.godot, one
 
 ## Stance (what it means in this game)
 - Two values: **Orthodox** and **Southpaw**. A stance is fixed for the whole fight; it is set before the fight in Character Select.
-- **Lead and rear.** The lead hand and lead foot are on the side nearer the opponent. Orthodox: lead = left (`GloveL`, `FootL`), rear = right. Southpaw: lead = right (`GloveR`, `FootR`), rear = left [S10][S3].
+- **Lead and rear.** The lead hand and lead foot are on the side nearer the opponent. Orthodox: lead = left (`GloveL`, `FootL`), rear = right. Southpaw: lead = right (`GloveR`, `FootR`), rear = left [S10].
 - **Jab is the lead hand's punch and cross is the rear hand's punch in both stances** [S10]. J always throws the jab and K always throws the cross; only the glove that moves changes.
 - **Part names stay anatomical.** `GloveL` is always the boxer's left glove, in either stance. Code and tests that need "the lead glove" ask a pure Core helper (below), not a hard-coded name.
 - **Boxer-relative sides do not change with stance.** Q is the boxer's own left and E the boxer's own right in both stances (client decision 4 of #10). In orthodox, slip-left is toward the lead-hand side; in southpaw it is toward the rear-hand side. This is just geometry; which side clears which punch is still deferred.
@@ -109,7 +109,7 @@ Order inside one tick: (1) move-timer advance and move end, (2) guard held/relea
 | Slip Recovery | **cancel: start Jab** | **cancel: start Cross** | ignored (no slip-to-slip) | ignored until move ends | no |
 
 - Cancel targets come from `moves.<move>.cancelInto`; shipped values are exactly the table (jab -> cross; slips -> jab, cross; cross -> nothing). Only Recovery can be cancelled.
-- **The one-two is lead jab then rear cross in both stances** (orthodox: left then right; southpaw: right then left). Stance changes nothing in the rule or the ticks; it changes only which glove the pose moves.
+- **The one-two is the jab (lead hand) then the cross (rear hand) in both stances.** The rule is by role, so it is the same in both. Stance changes nothing in the rule or the ticks; it changes only which glove the pose moves.
 - **Slip recovery cancels the same in both stances**, into the jab (lead hand) or the cross (rear hand), whichever slip side was used.
 - No jab -> jab (no double jab). This is a scope and readability choice, not a boxing rule (see abstraction lines).
 - **No input buffer.** An ignored press is dropped.
@@ -195,25 +195,28 @@ Changes in #12 against main: only the `stance` block was added (and comments upd
 Parsing and validation in Core; the adapter only reads the file, which must be in the exported build.
 
 ## Boxing notes
-#10 notes reviewed by boxing-consultant on 2026-11-28 (work/10/boxing-review.md); the #12 4-key review (work/12/boxing-review.md) is partly superseded by this rescope; the stance version needs a fresh review (see Boxing questions). Sources: docs/boxing/sources.md.
+#10 notes reviewed by boxing-consultant on 2026-11-28 (work/10/boxing-review.md). The stance version of #12 was reviewed by boxing-consultant on 2026-11-28 (work/12/boxing-review.md); the earlier 4-key review is superseded. Sources: docs/boxing/sources.md.
 
 ### Real boxing this spec relies on
-- Orthodox means the left hand and left foot lead; southpaw is the mirror, with the right hand and right foot leading [S10][S3].
-- The jab is the lead-hand straight and the cross the rear-hand straight, in either stance; the names follow the hand's role, not left or right [S10][S1][S3]. So a southpaw jabs with the right glove and crosses with the left.
+- Orthodox means the left hand and left foot lead; southpaw is the mirror, with the right hand and right foot leading [S10].
+- The jab is the lead-hand punch and the cross the rear-hand punch, in either stance; the names follow the hand's role, not left or right [S10]. So a southpaw jabs with the right glove and crosses with the left [S10].
 - The cross has farther to travel than the jab and gets its power from the rear-leg push and hip and torso rotation [S1][S3][S10]; the jab relies mainly on the front-leg push with slight torso involvement [S10]. Reach values are tuning values, not measured.
-- The one-two is taught as lead straight then rear straight, which justifies the jab -> cross cancel [S1][S2][S3]. Combination punches are delivered faster than a single maximal punch [S4].
+- The one-two is taught as lead straight then rear straight, which justifies the jab -> cross cancel [S1][S2][S3]. For a southpaw that is the right-hand jab then the left-hand cross, by the role definition [S10] (the coach manuals are not claimed to word it for southpaw). Combination punches are delivered faster than a single maximal punch [S4].
 - Only the punching hand leaves the guard while the other stays up, and the punching hand returns along the same line [S1][S2].
 - A slip moves the head off the line of an incoming straight punch and is followed at once by a counter [S2][S3]; the slip side depends on the incoming punch [S2].
 - A high guard and a tighter forearm cover protect the head against straight punches [S1][S2][S3].
-- Trained boxers can throw the basic punches from both stances; in S10 the same boxers did so, and stance changed punch force (jab higher in southpaw, cross higher in orthodox in that sample) but not fist acceleration [S10].
+- In S10, 30 trained, all right-handed boxers each threw the jab, cross, lead hook and rear hook from both stances (orthodox first, then southpaw, not randomised); the authors suggest training both stances may add versatility [S10]. This does not show that every boxer can. In that sample stance changed punch force (jab higher in southpaw, cross higher in orthodox) but not fist acceleration [S10]; all were right-handed, so this is not a tuning basis.
+- Real boxers usually fight from one usual stance, often linked to handedness; about 75 percent of 340 top professionals were orthodox and 25 percent southpaw [S11].
 - Real timing scale: throw to first contact about 0.11 to 0.14 s for jab and cross [S6]; a whole punch about 0.4 to 0.5 s [S5][S6]; contact about 0.02 to 0.03 s [S7].
 
 ### GAMEPLAY ABSTRACTION lines
 New in #12 (stance):
-GAMEPLAY ABSTRACTION: stance is a free menu choice made before the fight and fixed for the whole fight instead of a stance the boxer can change during a bout [S10] — simple controls; an in-fight switch is a later task.
+GAMEPLAY ABSTRACTION: stance is fixed for the whole fight instead of a stance the boxer can change during a bout [S10] — simple controls; an in-fight switch is a later task.
 GAMEPLAY ABSTRACTION: stance changes no timing, reach or power instead of changing punch force by punch type [S10] — one readable rule set; stance effects can be data-only later.
-GAMEPLAY ABSTRACTION: the southpaw build and punch poses are an exact mirror of the orthodox ones (including the cross torso turn) instead of each boxer's own movement in each stance [S10] — readability; S10 defines the stance as a mirror but does not describe the body action as an exact reflection.
-GAMEPLAY ABSTRACTION: any boxer may be either stance, with no link to handedness or the boxer's stats, instead of a boxer's own trained stance — client request for a free choice; stats are display-only.
+GAMEPLAY ABSTRACTION: the southpaw build, punch poses and cross torso turn are exact reflections of the orthodox ones instead of a real southpaw's own body action [S10] — S10 defines southpaw as the mirror stance but does not describe the body action as an exact reflection, nor state which shoulder ends forward or the turn angle (the angle is a tuning value); readability.
+GAMEPLAY ABSTRACTION: any boxer may take either stance by a free pre-fight choice, with no link to handedness or stats, instead of a boxer's own usual stance, which is often linked to handedness and is about one in four among top professionals [S11] — client request for a free choice; stats are display-only.
+GAMEPLAY ABSTRACTION: orthodox against southpaw has no special effect instead of a real mismatch in which both stances won more of their fights against orthodox opponents than against southpaws [S11] — the opponent is idle and stance changes no number; matchup effects can be data-only later.
+GAMEPLAY ABSTRACTION: the jab has no torso turn instead of slight torso involvement [S10] — readability from the side-on camera.
 
 Carried from #10 (reviewed):
 GAMEPLAY ABSTRACTION: jab and cross use fixed tick timings chosen for rhythm instead of measured durations (throw about 0.1 s, whole punch about 0.4 to 0.5 s [S5][S6]) — a readable startup/active/recovery beat; the jab total is deliberately quicker than real.
@@ -248,14 +251,14 @@ Kept for the record; decisions on work/10/boxing-review.md.
 - The no-double-jab rule is worded as a scope choice (finding 11).
 - Findings on right jab, left cross, mirrored one-two and four-punch slip cancels no longer apply (those moves were removed).
 
-### Boxing questions (for boxing-consultant)
-1. Are the stance definitions above (orthodox = left hand and foot lead; southpaw = mirror) correctly cited to [S10][S3]? Does S3 cover southpaw, or only orthodox?
-2. Is it correct to state that in southpaw the jab is the right (lead) hand and the cross the left (rear) hand, with the one-two as right jab then left cross [S10][S1][S2]?
-3. Is the cross torso turn as a mirror (rear shoulder forward: left shoulder in southpaw) acceptable as stated, or should it stay only an abstraction line as written?
-4. Is a per-boxer stance chosen in Character Select, for both the player and the opponent, a fair model as a pre-fight choice? Is there anything in the allowed sources about boxers having a trained or preferred stance that the free-choice abstraction line should mention?
-5. Is the line "trained boxers can throw the basic punches from both stances" a fair reading of [S10], given that its sample was 30 right-handed trained boxers?
-6. With a southpaw, slip-left (Q) is toward the rear-hand side. Is there any real-boxing claim needed here now, or does it stay deferred to the opponent-attack spec?
-7. Orthodox versus southpaw mismatches (for example lead feet lining up) are not modelled at all, since the opponent is idle. Any objection to leaving that unmentioned until opponent attacks exist?
+### Boxing review outcome (#12)
+Reviewed 2026-11-28 (work/12/boxing-review.md). Applied:
+- Southpaw definition and lead/rear roles cite [S10] alone; [S3] is verified only for orthodox, so it is not cited for any southpaw claim.
+- The one-two is worded by role (jab then cross); the southpaw mapping rests on [S10], not on the coach manuals.
+- The "both stances" claim is scoped to S10's sample (30 trained right-handed boxers) and "any boxer may be either stance" now cites [S11].
+- Abstraction lines added or reworded: mirrored southpaw build and cross turn, free stance choice, no matchup effect, no jab torso turn.
+- Slip side versus stance: no claim now, deferred to the opponent-attack spec.
+- Not verified: whether S1, S2 or S3 text mentions southpaw (needs a text-readable copy). Nothing in this design depends on it. S10 and S11 were read at abstract level only.
 
 ## Out of scope
 - **In-fight stance switch** (a later task), and any switch during Character Select other than the toggle described.
@@ -283,10 +286,11 @@ Made at G2 of #12 (2026-11-28):
 5. Two punch keys only: J = jab (lead hand), K = cross (rear hand). The 4-key design is dropped.
 6. Stance per boxer, chosen in Character Select (orthodox or southpaw); southpaw is mirrored; no in-fight switch.
 
-## Open questions
+## Client decisions needed (G2 of #12)
 1. **Stance control:** proposed Up / Down (existing actions, no new key) plus a click on the stance line. Alternative: Tab as a dedicated stance key (one new code-registered action). Recommendation: Up / Down, because Left / Right already move between cards, so Up / Down reads as "change the other setting", and it adds no key.
 2. **Default stance:** both steps start on Orthodox (`stance.default`). Alternative: a per-boxer default in the roster (for example Ghost starts southpaw). Not proposed, to keep stance a pure player choice.
-3. Which slip side beats which punch: still deferred (opponent-attack spec).
+
+Deferred, not a client decision now: which slip side beats which punch (opponent-attack spec).
 
 ## Playtest checklist
 Five things the client checks by hand at G3.
