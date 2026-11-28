@@ -1,6 +1,6 @@
 # Spec: Player controls (playable fight, idle opponent)
 
-Status: DRAFT (issue #12 amendment; the issue #10 version was APPROVED by the client at G2, 2026-11-28)   Issue: #12 (amends #10)
+Status: READY FOR G2 (issue #12 amendment, boxing review applied; the issue #10 version was APPROVED by the client at G2, 2026-11-28)   Issue: #12 (amends #10)
 
 ## What changed for issue #12
 Jab and cross are each split into a **left-hand** and a **right-hand** version, so the player has four punch keys instead of two. Everything else (walking, guard, slips, timings, no input buffer, contact rule, idle opponent) is unchanged from the approved #10 version, apart from the rules that name the punches. Summary of the deltas:
@@ -8,7 +8,7 @@ Jab and cross are each split into a **left-hand** and a **right-hand** version, 
 - States `Jab` / `Cross` become `LeftJab`, `RightJab`, `LeftCross`, `RightCross`; the `Contact` result and the contact text name the hand.
 - One-two cancel: a jab's Recovery cancels only into the **other hand's** cross (left jab -> right cross, right jab -> left cross). Slip Recovery cancels into any of the four punches.
 - Data: `moves.jab|cross` become `moves.leftJab|rightJab|leftCross|rightCross` (same numbers, mirrored); one new visual key `visual.rearJabTurnDeg`.
-- Stance stays orthodox for every boxer. A right jab and a left cross are therefore an off-hand jab and a lead-hand cross; whether that is realistic is a **Boxing question** below.
+- Stance stays orthodox for every boxer. A right jab and a left cross are therefore a rear-hand jab and a lead-hand cross. They are game inventions (GAMEPLAY ABSTRACTION, see Boxing notes): in real boxing "jab" and "cross" name the lead and the rear hand's role, not left or right [S10].
 
 ## Goal
 When the player confirms both boxers in Character Select, the ring becomes a fight scene: the player's boxer walks forward and back and throws a jab or a cross with either glove, holds a guard and slips to either side, all from the keyboard. The opponent stands idle. This sets the timing rules (startup, active, recovery, cancels) that stamina, damage and AI will build on later, now with a choice of hand for each straight punch.
@@ -93,7 +93,7 @@ Order inside one tick: (1) move-timer advance and move end, (2) guard held/relea
 | Slip Recovery | **cancel: start LeftJab** | **cancel: start RightJab** | **cancel: start LeftCross** | **cancel: start RightCross** | ignored (no slip-to-slip chain) | ignored until move ends | no |
 
 - The cancel targets come from `moves.<move>.cancelInto` in the data file; the shipped values are exactly the table above (leftJab -> rightCross; rightJab -> leftCross; slipLeft and slipRight -> any of the four punches; crosses -> nothing). Only the Recovery phase can be cancelled. Startup and Active never are.
-- **No same-hand jab -> cross and no jab -> jab.** A left jab does not cancel into a left cross, and no jab cancels into a jab (no double jab, as in #10). In the one-two only the other hand fires while the punching hand comes back (see Boxing notes).
+- **No same-hand jab -> cross and no jab -> jab.** A left jab does not cancel into a left cross, and no jab cancels into a jab (no double jab, as in #10). This is a scope and readability choice for M1, not a boxing rule: a same-hand repeat such as a double jab is real boxing [S1][S3] and may come in a later task (GAMEPLAY ABSTRACTION, see Boxing notes).
 - **No input buffer.** A press that is ignored is dropped; it does not fire later. Mashing during a move does nothing (vision: button-mashing doesn't win).
 - **Same-tick priority** when more than one fresh press arrives on one tick: first the presses that the current state does not allow (the "ignored" cells above) are dropped; then, of the allowed presses, only the first in this order starts: SlipLeft, SlipRight, LeftJab, RightJab, LeftCross, RightCross. The others are dropped. This is the #10 rule (allowed first, then fixed order) with the four punches in place of two. Examples: J and I on one tick from Idle -> LeftJab starts (the cross is dropped, not queued); U and I on one tick in LeftJab Recovery -> RightCross starts (LeftCross is not allowed there); K and J on one tick from Idle -> LeftJab starts.
 - **Pressing both hands "at once" never throws both.** There is no two-glove punch; a near-simultaneous press is either one tick (priority above) or two ticks (the second press is handled by the state the first one started, usually ignored).
@@ -170,27 +170,30 @@ AC1 to AC16 are xUnit tests in `tests/Core.Tests` (tick-exact, using the shipped
 ## Balance values
 All numbers live in `data/balance/player-moves.json` (plus the existing positions in `data/balance/fighters.json`), not in this spec or in code.
 Pointer: `data/balance/player-moves.json` -> `tickRate`; `moves.leftJab|rightJab|leftCross|rightCross|slipLeft|slipRight.startupFrames|activeFrames|recoveryFrames|cancelInto`; `moves.leftJab|rightJab|leftCross|rightCross.reachM`; `guard.raiseFrames`, `guard.moveSpeedMultiplier`; `movement.walkSpeedMps`, `movement.minX`, `movement.minSeparationM`; `feedback.contactTextFrames`; `visual.punchExtendH`, `visual.crossTorsoTurnDeg`, `visual.rearJabTurnDeg` (new), `visual.guard*`, `visual.slip*` (developer may tune about 30 percent for readability). `data/balance/fighters.json` -> `ring.playerX`, `ring.opponentX`.
-Changes in #12: `moves.jab` and `moves.cross` were renamed and duplicated into the four hand entries with the **same numbers** (left and right of one punch type are mirrored); `cancelInto` lists use the new names; `visual.rearJabTurnDeg` was added. If the boxing review asks for different numbers per hand (for example a slower or shorter off-hand jab), only the data file changes; the code and these rules stay the same.
+Changes in #12: `moves.jab` and `moves.cross` were renamed and duplicated into the four hand entries with the **same numbers** (left and right of one punch type are mirrored); `cancelInto` lists use the new names; `visual.rearJabTurnDeg` was added. The boxing review kept the numbers equal per hand (no allowed source gives per-hand timings). If a later task wants a per-hand difference, only the data file changes, preferably damage or power rather than ticks; the code and these rules stay the same.
 Parsing and validation happen in Core (text in, exception on bad data); the adapter only reads the file. The file must be included in the exported build, as with fighters.json.
 
 ## Boxing notes
-The #10 notes were reviewed by boxing-consultant on 2026-11-28 (work/10/boxing-review.md). The #12 additions below are **not yet reviewed**; see Boxing questions. Sources are in docs/boxing/sources.md.
+The #10 notes were reviewed by boxing-consultant on 2026-11-28 (work/10/boxing-review.md), and the #12 additions on the same date (work/12/boxing-review.md); see Boxing review outcome (#12). Sources are in docs/boxing/sources.md.
 
 ### Real boxing this spec relies on
-- The jab is the lead-hand straight punch and the cross is the rear-hand straight punch; in an orthodox stance the left hand and left foot lead, so `GloveL` is the lead [S1][S3]. This is why LeftJab and RightCross are the "natural" orthodox pair and the #10 moves map onto them unchanged.
-- The cross has farther to travel than the jab and gets its power and extra reach from the rear-leg push and the hip and shoulder turn [S1][S3][S8]. The metre values for reach are tuning values, not measured.
+- The jab is the lead-hand straight punch and the cross is the rear-hand straight punch, in either stance; in an orthodox stance the left hand and left foot lead, so `GloveL` is the lead, and a southpaw is the mirror [S1][S3][S10]. This is why LeftJab and RightCross are the "natural" orthodox pair and the #10 moves map onto them unchanged.
+- The cross has farther to travel than the jab and gets its power and extra reach from the rear-leg push and the hip and torso rotation [S1][S3][S10]; the jab relies mainly on the front-leg push with slight torso involvement [S10]. The metre values for reach are tuning values, not measured.
 - The jab then cross (the "one-two") is a basic combination taught as lead straight then rear straight, which justifies the LeftJab -> RightCross cancel [S1][S2][S3]. Punches thrown in a combination are delivered faster than a single maximal punch [S4].
-- In real boxing only the punching hand leaves the guard while the other hand stays up and the punching hand returns along the same line [S1][S2]. This is why a jab cancels into the **other** hand's cross and not the same hand's.
+- In real boxing only the punching hand leaves the guard while the other hand stays up and the punching hand returns along the same line [S1][S2]. This supports a jab cancelling into the **other** hand's cross while the punching hand returns; the ban on same-hand follow-ups is a scope choice, not a boxing rule (see the abstraction lines).
 - A slip moves the head off the line of an incoming straight punch and is followed at once by a counter with both hands free, which justifies Slip Recovery -> punch cancel [S2][S3]. The side of the slip depends on the incoming punch [S2].
 - A high guard and a tighter cover with both forearms in front protect the head against straight punches [S1][S2][S3].
 - Real timing scale: throw to first contact about 0.11 to 0.14 s for jab and cross [S6]; a whole punch about 0.4 to 0.5 s [S5][S6]; contact about 0.02 to 0.03 s [S7]. No allowed source gives real slip durations.
 
 ### GAMEPLAY ABSTRACTION lines
-New in #12 (provisional until the boxing review):
-GAMEPLAY ABSTRACTION: from an orthodox stance the player can throw a jab and a cross with either glove (a right jab and a left cross included), instead of the jab being the lead-hand punch and the cross the rear-hand punch [S1][S3] — client request for a choice of hand on both straight punches; whether a rear-hand jab or a lead-hand cross has a real-boxing counterpart is Boxing question B2/B3.
-GAMEPLAY ABSTRACTION: the right jab and the left cross use the same timings and reach as their mirrored partner, instead of the lead and rear hand differing in travel distance and power [S1][S3][S7] — mirrored moves are easier to learn and the client asked for the same timings; per-hand tuning is data-only if the review asks for it.
-GAMEPLAY ABSTRACTION: the stance never changes when the player leads with the right glove, instead of a boxer switching to southpaw (right foot and hand forward) to lead with the right [S3] — stance switching is out of scope; see Boxing question B4.
-GAMEPLAY ABSTRACTION: the mirrored one-two (RightJab -> LeftCross) is allowed as a cancel from an orthodox stance, instead of only the lead-then-rear one-two [S1][S2][S3] — keeps the two hands symmetrical; pending Boxing question B5.
+New in #12 (reviewed):
+GAMEPLAY ABSTRACTION: the player can throw a jab-speed straight with the rear hand (right jab) and a rotating straight with the lead hand (left cross) from an orthodox stance instead of the jab being the lead hand's punch and the cross the rear hand's, in either stance [S10][S1][S3] — client request for a choice of hand on both punches; no allowed source names either punch.
+GAMEPLAY ABSTRACTION: the left and right version of each punch share the same ticks and reach instead of lead and rear hands differing in travel and force [S1][S3][S7] — no allowed source gives per-hand timings, and fist acceleration did not differ by stance [S10]; per-hand tuning is data-only later.
+GAMEPLAY ABSTRACTION: the stance never changes when the player uses the right glove first instead of switching to southpaw to lead with the right hand [S10] — stance switching is out of scope.
+GAMEPLAY ABSTRACTION: the mirrored one-two (RightJab -> LeftCross) is allowed instead of only lead straight then rear straight [S1][S2][S3] — keeps the two hands symmetrical; removable by data (`rightJab.cancelInto`).
+GAMEPLAY ABSTRACTION: a jab cannot cancel into a same-hand cross or another jab instead of real combinations that repeat a hand, such as the double jab [S1][S3] — M1 has few moves; same-hand repeats come later.
+GAMEPLAY ABSTRACTION: any of the four punches may cancel a slip's Recovery regardless of slip side instead of a counter chosen for the slip and the incoming punch [S2][S3] — no opponent attacks yet.
+GAMEPLAY ABSTRACTION: the left cross and right jab torso turns are mirrored or scaled visual choices instead of described body actions [S10] — readability from the side-on camera.
 
 Carried from #10 (reviewed):
 GAMEPLAY ABSTRACTION: jab and cross use fixed tick timings chosen for rhythm instead of measured durations (throw about 0.1 s, whole punch about 0.4 to 0.5 s [S5][S6]) — a readable startup/active/recovery beat; the jab total is deliberately quicker than real.
@@ -219,16 +222,15 @@ Kept for the record; decisions taken on work/10/boxing-review.md.
 | C4 | Only the punching hand leaves the guard | **Accepted.** | Stated with [S1][S2]; closed-both-hands guard is an abstraction line. |
 | Slip direction | One slip for both punches? | **Superseded** by two slips; side-to-punch mapping deferred. | [S2] |
 
-## Boxing questions
-For boxing-consultant (work/12/boxing-review.md). Each answer is either a citation from docs/boxing/sources.md (or a new row the consultant adds), or a confirmation that the item stays a GAMEPLAY ABSTRACTION. Nothing below blocks the key layout; it can only change data values, the cancel list, or the abstraction wording.
-- **B1. Which hand throws which punch.** Confirm that in real boxing "jab" and "cross" are defined by **lead vs rear hand**, not by left vs right, so that an orthodox boxer's jab is the left hand and a southpaw's jab is the right hand [S1][S3 cover orthodox; is there a source for southpaw?].
-- **B2. Off-hand (rear-hand) jab.** Is a quick, non-rotating straight with the **rear** hand a recognised punch in coaching material (for example a "rear jab" or a short rear straight), or is it purely a GAMEPLAY ABSTRACTION? If it exists, is it slower, shorter in reach or less powerful than the lead jab, and should `rightJab` timing or `reachM` differ from `leftJab`?
-- **B3. Lead-hand cross.** Is a rotating power straight with the **lead** hand (a "lead straight" or "power jab") a recognised punch, or a GAMEPLAY ABSTRACTION? If it exists, how does it differ from the rear cross in reach, power and travel, and should `leftCross` timing or `reachM` differ from `rightCross`?
-- **B4. Orthodox vs southpaw.** Given B1, the realistic way to lead with the right hand is a southpaw stance or a stance switch. Confirm the spec's choice to keep every boxer orthodox and mark the right jab / left cross as abstractions is acceptable, or recommend a later "switch stance" move instead (it would be a separate task; this spec does not add it).
-- **B5. Mirrored one-two.** From an orthodox stance, is a rear-hand jab followed by a lead-hand cross (RightJab -> LeftCross) taught or used at all? If not, should the cancel be removed from `rightJab.cancelInto` (data-only change) or stay as an abstraction for symmetry?
-- **B6. Same-hand follow-ups.** The spec forbids a jab cancelling into the same hand's cross and any jab -> jab. Confirm this matches "only the punching hand leaves the guard and returns along the same line" [S1][S2], or say whether a same-hand double (for example the double jab) should be allowed in a later task.
-- **B7. Counter after a slip.** The spec lets any of the four punches cancel a slip's Recovery. Is any hand / punch pairing after a slip to a given side unrealistic enough that it should be marked or restricted later (when the opponent attacks)? Not built now; for the opponent-attack spec.
-- **B8. Visual torso turn.** A left cross turns the left shoulder forward (mirror of the right cross), and a right jab gets a small turn so the rear glove reaches. Confirm these read as plausible, or mark them as visual choices only.
+### Boxing review outcome (#12)
+Decisions taken on work/12/boxing-review.md (boxing-consultant, 2026-11-28). No numbers, keys or tick timings changed.
+- **Jab and cross follow the hand's role** (lead or rear), not left or right, in either stance [S10]. Added to the first Boxing notes bullet.
+- **Right jab, left cross, mirrored one-two, mirrored torso turns, any-punch-after-slip:** no allowed source names or rules them out. All stay as GAMEPLAY ABSTRACTION lines above. The right jab and left cross are game inventions; the mirrored one-two can be removed by data if playtest shows confusion.
+- **Equal timings and reach per hand:** kept. No source gives per-hand timings; a later difference should be damage or power, not ticks [S7][S10].
+- **Cross rotation claim:** [S8] removed, [S10] added (S8 does not describe trunk rotation as the source of power).
+- **Same-hand follow-up ban:** reworded as a scope and readability choice, not a boxing rule. A double jab may come in a later task.
+- **Orthodox for everyone:** accepted. A later "switch stance" task is the realistic route; if added, punches must be named by lead and rear, not left and right, so the glove-based names (LeftJab, RightCross) would need a rename or stance-aware label [S10].
+- **Evidence limit:** S1 to S3 could not be re-read as text in this review, so they are cited only for claims already reviewed in #10. A double-jab and southpaw statement in the coach manuals is not re-verified.
 
 ## Out of scope
 - Stamina, health, damage, KO, knockdowns, round timer display or round end, points decision, scoring.
@@ -255,7 +257,7 @@ Made by the client at G2 of #10 (2026-11-28) and still in force:
 
 ## Open questions
 1. **Which slip side beats which punch** is still deferred (opponent-attack spec, with a boxing review).
-2. **Per-hand tuning** (B2, B3): if the boxing review says the off-hand jab or the lead-hand cross should be slower or shorter, the designer will update only `data/balance/player-moves.json` and AC3's "mirrored" clause before development.
+2. **Per-hand tuning:** the boxing review kept equal numbers per hand. If playtest asks for a difference, it is a later, data-only change (damage or power preferred over ticks) plus AC3's "mirrored" clause.
 
 ## Playtest checklist
 Five things the client checks by hand at G3.
