@@ -1,0 +1,1 @@
+- 2026-11-28 intake: route full (mechanic; designer opus, boxing, developer, qa, kb)
