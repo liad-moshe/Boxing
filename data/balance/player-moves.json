@@ -1,17 +1,33 @@
 {
-  "_comment": "Player moves and movement for the fight scene (issue #10, spec docs/specs/player-controls.md). Timings are whole simulation ticks at tickRate (60 ticks = 1 second; seconds in each _comment are for humans only). Distances are metres along the side-on X axis, measured between fighter root positions. All values are GAMEPLAY ABSTRACTION tuning values, not measured boxing data; the boxing review (work/10) set the jab/cross gap so the cross is a bit slower and heavier, not clearly slower.",
+  "_comment": "Player moves and movement for the fight scene (issues #10 and #12, spec docs/specs/player-controls.md). Timings are whole simulation ticks at tickRate (60 ticks = 1 second; seconds in each _comment are for humans only). Distances are metres along the side-on X axis, measured between fighter root positions. All values are GAMEPLAY ABSTRACTION tuning values, not measured boxing data; the boxing review (work/10) set the jab/cross gap so the cross is a bit slower and heavier, not clearly slower. Issue #12 split jab and cross into a left-hand and a right-hand version each; the two hands of one punch type share the same numbers on purpose (mirrored), and are separate entries so they can be tuned apart after the boxing review (work/12) without a code change.",
   "tickRate": 60,
   "moves": {
-    "jab": {
-      "_comment": "Lead hand. 6/3/9 ticks = 0.10 s / 0.05 s / 0.15 s, total 18 ticks = 0.30 s. Startup matches a measured throw-to-contact of about 0.12 s; the total is deliberately snappier than a real whole punch (about 0.4 to 0.5 s).",
+    "leftJab": {
+      "_comment": "Jab with the left glove (the lead hand in the orthodox stance). Key J. 6/3/9 ticks = 0.10 s / 0.05 s / 0.15 s, total 18 ticks = 0.30 s. Startup matches a measured throw-to-contact of about 0.12 s; the total is deliberately snappier than a real whole punch (about 0.4 to 0.5 s). Recovery cancels only into the other hand's cross (the one-two).",
       "startupFrames": 6,
       "activeFrames": 3,
       "recoveryFrames": 9,
       "reachM": 1.10,
-      "cancelInto": ["cross"]
+      "cancelInto": ["rightCross"]
     },
-    "cross": {
-      "_comment": "Rear hand. 8/4/14 ticks = 0.13 s / 0.07 s / 0.23 s, total 26 ticks = 0.43 s (about 1.44 x the jab total). A bit slower and heavier than the jab, slightly longer reach; the gap is small on purpose because real jab and cross speeds are close. Keep cross total <= 1.5 x jab total so the one-two stays usable (checked by AC3).",
+    "rightJab": {
+      "_comment": "Jab with the right glove (the rear hand in the orthodox stance). Key K. Same numbers as leftJab (mirrored). Recovery cancels only into the other hand's cross.",
+      "startupFrames": 6,
+      "activeFrames": 3,
+      "recoveryFrames": 9,
+      "reachM": 1.10,
+      "cancelInto": ["leftCross"]
+    },
+    "leftCross": {
+      "_comment": "Cross with the left glove (the lead hand in the orthodox stance). Key U. Same numbers as rightCross (mirrored). Keep each cross total <= 1.5 x each jab total so the one-two stays usable (checked by AC3).",
+      "startupFrames": 8,
+      "activeFrames": 4,
+      "recoveryFrames": 14,
+      "reachM": 1.25,
+      "cancelInto": []
+    },
+    "rightCross": {
+      "_comment": "Cross with the right glove (the rear hand in the orthodox stance). Key I. 8/4/14 ticks = 0.13 s / 0.07 s / 0.23 s, total 26 ticks = 0.43 s (about 1.44 x the jab total). A bit slower and heavier than the jab, slightly longer reach; the gap is small on purpose because real jab and cross speeds are close.",
       "startupFrames": 8,
       "activeFrames": 4,
       "recoveryFrames": 14,
@@ -19,18 +35,18 @@
       "cancelInto": []
     },
     "slipLeft": {
-      "_comment": "Slip to the boxer's own left (away from the side-on camera). Key Q. 3/15/12 ticks = 0.05 s / 0.25 s / 0.20 s, total 0.50 s. Evading only during active. Recovery can be cancelled into a punch (counter) but not into another slip. No source gives real slip durations: tuning values. Same as slipRight on purpose; separate entry so the two sides can be tuned apart later.",
+      "_comment": "Slip to the boxer's own left (away from the side-on camera). Key Q. 3/15/12 ticks = 0.05 s / 0.25 s / 0.20 s, total 0.50 s. Evading only during active. Recovery can be cancelled into any of the four punches (counter) but not into another slip. No source gives real slip durations: tuning values. Same as slipRight on purpose; separate entry so the two sides can be tuned apart later.",
       "startupFrames": 3,
       "activeFrames": 15,
       "recoveryFrames": 12,
-      "cancelInto": ["jab", "cross"]
+      "cancelInto": ["leftJab", "rightJab", "leftCross", "rightCross"]
     },
     "slipRight": {
-      "_comment": "Slip to the boxer's own right (toward the side-on camera). Key E. Same timings as slipLeft (see there).",
+      "_comment": "Slip to the boxer's own right (toward the side-on camera). Key E. Same timings and cancels as slipLeft (see there).",
       "startupFrames": 3,
       "activeFrames": 15,
       "recoveryFrames": 12,
-      "cancelInto": ["jab", "cross"]
+      "cancelInto": ["leftJab", "rightJab", "leftCross", "rightCross"]
     }
   },
   "guard": {
@@ -45,13 +61,14 @@
     "minSeparationM": 0.75
   },
   "feedback": {
-    "_comment": "On-screen 'Contact: Jab/Cross' text duration. 45 ticks = 0.75 s.",
+    "_comment": "On-screen 'Contact: Left Jab' / 'Right Jab' / 'Left Cross' / 'Right Cross' text duration. 45 ticks = 0.75 s.",
     "contactTextFrames": 45
   },
   "visual": {
-    "_comment": "Pose offsets for the code-driven move animation, fractions of fighter height (H) or width (W) as in fighters.json body. Developer may tune within about 30 percent so the move reads well; tune punchExtendH so a punch at gap == reach visibly reaches the opponent. Slip (both sides): slipHeadDropH = upper-body dip (same for both sides); slipLeanDeg = roll toward the chosen side about the facing axis (head moves toward the camera for slipRight, away for slipLeft); slipTurnDeg = shoulder turn about the vertical axis, opposite sign for the two sides, so the side reads from the side-on camera.",
+    "_comment": "Pose offsets for the code-driven move animation, fractions of fighter height (H) or width (W) as in fighters.json body. Developer may tune within about 30 percent so the move reads well; tune so every punch at gap == its reach visibly reaches the opponent. punchExtendH = forward glove travel for every punch, either glove. crossTorsoTurnDeg = torso/shoulder/head turn for a cross, toward the punching glove's side (sign flips for the left cross, mirrored). rearJabTurnDeg = small shoulder turn for the right (rear-hand) jab only, so the rear glove, which starts further back, still visibly reaches at jab range; keep it clearly smaller than crossTorsoTurnDeg so a right jab and a right cross look different. The left (lead-hand) jab has no turn. Slip (both sides): slipHeadDropH = upper-body dip (same for both sides); slipLeanDeg = roll toward the chosen side about the facing axis (head moves toward the camera for slipRight, away for slipLeft); slipTurnDeg = shoulder turn about the vertical axis, opposite sign for the two sides, so the side reads from the side-on camera.",
     "punchExtendH": 0.24,
     "crossTorsoTurnDeg": 25,
+    "rearJabTurnDeg": 10,
     "guardGloveRaiseH": 0.04,
     "guardGloveInwardW": 0.15,
     "slipHeadDropH": 0.07,

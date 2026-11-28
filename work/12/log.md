@@ -1,1 +1,2 @@
 - 2026-11-28 intake: route full (mechanic; designer opus, boxing, developer, qa, kb)
+- 2026-11-28 game-designer: DONE — spec drafted (2x2 grid J/K/U/I), balance data updated, boxing questions B1-B8
