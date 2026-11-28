@@ -5,3 +5,4 @@
 - 2026-11-28 game-designer (revision): DONE — spec updated after boxing review (cross 8/4/14); G2 pending, 3 open client questions
 - 2026-11-28 G2 answers from client: guard on S; arrows also move (Left/Right); separate slip left/right. Spec update delegated to game-designer
 - 2026-11-28 game-designer (client key decisions): DONE — slip Q/E, arrows added; awaiting client confirm of final key map (G2)
+- 2026-11-28 G2: client CONFIRMED spec; arrows-for-walking dropped (A/D only), Q/E boxer-relative slips kept
