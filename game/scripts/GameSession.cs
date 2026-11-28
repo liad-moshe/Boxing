@@ -17,6 +17,11 @@ public static class GameSession
 
     public static string? OpponentId { get; set; }
 
+    /// <summary>Stance picked in Character Select; null on a direct launch (the ring falls back to stance.default).</summary>
+    public static Stance? PlayerStance { get; set; }
+
+    public static Stance? OpponentStance { get; set; }
+
     /// <summary>The roster, loaded once from the data file (works in the editor and in exports).</summary>
     public static FighterRoster Roster => _roster ??= FighterRoster.Parse(FileAccess.GetFileAsString(RosterPath));
 
@@ -27,5 +32,7 @@ public static class GameSession
     {
         PlayerId = null;
         OpponentId = null;
+        PlayerStance = null;
+        OpponentStance = null;
     }
 }

@@ -156,8 +156,8 @@ public partial class Smoke : Node
         // AC26: compare the two shipped builds side by side.
         var anvilDef = roster.FindOrFirst("anvil");
         var ghostDef = roster.FindOrFirst("ghost");
-        var anvil = FighterBuilder.Build("A", anvilDef, roster, "A", 1f);
-        var ghost = FighterBuilder.Build("G", ghostDef, roster, "G", -1f);
+        var anvil = FighterBuilder.Build("A", anvilDef, roster, "A", 1f, Stance.Orthodox);
+        var ghost = FighterBuilder.Build("G", ghostDef, roster, "G", -1f, Stance.Orthodox);
         var holder = new Node3D { Name = "LookCheck" };
         AddChild(holder);
         holder.AddChild(anvil);

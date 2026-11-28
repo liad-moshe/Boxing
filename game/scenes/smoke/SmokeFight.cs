@@ -24,7 +24,30 @@ public partial class Smoke
     {
         try
         {
+            // AC19 / AC20: the Character Select stance line (before the ring runs, so keys cannot disturb the fight).
+            await SelectScript();
+
+            // AC30 / AC24: the direct launch is orthodox for both fighters.
             await FightScript();
+            await StanceScript(Stance.Orthodox, walkClose: false);
+
+            // AC21 / AC25 / AC27: a southpaw player against an orthodox opponent, as Character Select would hand off.
+            var first = _main ?? throw new InvalidOperationException("no Main");
+            first.QueueFree();
+            await Frames(3);
+            GameSession.PlayerStance = Stance.Southpaw;
+            GameSession.OpponentStance = Stance.Orthodox;
+            var southpawMain = GD.Load<PackedScene>(MainScenePath).Instantiate();
+            AddChild(southpawMain);
+            _main = southpawMain;
+            await Frames(3);
+            await StanceScript(Stance.Southpaw, walkClose: true);
+            GameSession.Clear();
+
+            Expect(_turnSize.ContainsKey(Stance.Orthodox) && _turnSize.ContainsKey(Stance.Southpaw), "cross torso turn was not measured for both stances");
+            Expect(
+                Math.Abs(_turnSize[Stance.Orthodox] - _turnSize[Stance.Southpaw]) <= 0.05f * _turnSize[Stance.Orthodox],
+                $"the southpaw cross turn ({_turnSize[Stance.Southpaw]:0.0000}) is not the same size as the orthodox one ({_turnSize[Stance.Orthodox]:0.0000})");
             _finished = true;
             GD.Print($"SMOKE: PASS after {_frames} physics frames (fight script included)");
             GetTree().Quit(0);
@@ -211,6 +234,181 @@ public partial class Smoke
         {
             Expect(opponentNow[name].IsEqualApprox(transform), $"the opponent's {name} changed pose");
         }
+    }
+
+    private readonly Dictionary<Stance, float> _turnSize = new();
+
+    private async Task Send(string action, Func<Task> next)
+    {
+        Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = true, Strength = 1f });
+        await next();
+        Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = false });
+        await next();
+    }
+
+    /// <summary>AC19 / AC20 where practical: toggling and confirming on a real CharacterSelect instance.</summary>
+    private async Task SelectScript()
+    {
+        var select = GD.Load<PackedScene>(ScenePaths.CharacterSelect).Instantiate();
+        AddChild(select);
+        try
+        {
+            await Frames(2);
+            var line = select.GetNode<Label>("Column/StanceLine");
+            var header = select.GetNode<Label>("Column/Header");
+            var you = select.GetNode<Label>("Column/YouLine");
+            const string Orthodox = "Stance: Orthodox   (Up / Down to change)";
+            const string Southpaw = "Stance: Southpaw   (Up / Down to change)";
+            Expect(line.Text == Orthodox, $"step 1 stance line reads '{line.Text}'");
+            Expect(line.FocusMode == Control.FocusModeEnum.None, "the stance line can take keyboard focus");
+
+            await Send("menu_up", NextFrame);
+            Expect(line.Text == Southpaw, $"Up did not give Southpaw ('{line.Text}')");
+            await Send("menu_down", NextFrame);
+            Expect(line.Text == Orthodox, $"Down did not give Orthodox ('{line.Text}')");
+            await Send("menu_right", NextFrame);
+            await Send("menu_left", NextFrame);
+            Expect(line.Text == Orthodox, "moving the highlight changed the stance");
+
+            line.EmitSignal(Control.SignalName.GuiInput, new InputEventMouseButton { Pressed = true, ButtonIndex = MouseButton.Left });
+            await Frames(1);
+            Expect(line.Text == Southpaw, "clicking the stance line did not toggle it");
+            Expect(header.Text == "Choose your boxer", "clicking the stance line confirmed a card");
+
+            await Send("menu_confirm", NextFrame);
+            Expect(header.Text == "Choose your opponent", "Enter did not confirm the highlighted card");
+            Expect(you.Text.StartsWith("You: ", StringComparison.Ordinal) && you.Text.EndsWith("(Southpaw)", StringComparison.Ordinal), $"step 2 'You' line reads '{you.Text}'");
+            Expect(line.Text == Orthodox, $"step 2 stance line reads '{line.Text}', expected Orthodox");
+        }
+        finally
+        {
+            select.QueueFree();
+            await Frames(2);
+            GameSession.Clear();
+        }
+    }
+
+    /// <summary>
+    /// AC21 / AC24 / AC25 / AC26 / AC27 / AC28 on the ring's player in <paramref name="stance"/>: tag, feet, which glove
+    /// throws what, the cross torso turn direction, the one-two, slip-recovery cancels, guard and contact.
+    /// </summary>
+    private async Task StanceScript(Stance stance, bool walkClose)
+    {
+        var main = _main ?? throw new InvalidOperationException("no Main");
+        var fight = main.GetNode<FightController>("Fight");
+        var fighter = fight.Fighter;
+        var roster = GameSession.Roster;
+        var moves = GameSession.Moves;
+        var root = main.GetNode<Node3D>("PlayerFighter");
+        var opponent = main.GetNode<Node3D>("OpponentFighter");
+        var height = (float)(roster.BaseHeight * roster.FindOrFirst(GameSession.PlayerId).Look.HeightScale);
+        var name = StanceRules.DisplayName(stance);
+        var lead = StanceRules.LeadSide(stance) == BodySide.Left ? "GloveL" : "GloveR";
+        var rear = lead == "GloveL" ? "GloveR" : "GloveL";
+        var leadFoot = lead == "GloveL" ? "FootL" : "FootR";
+        var rearFoot = lead == "GloveL" ? "FootR" : "FootL";
+        var opponentStance = stance == Stance.Southpaw ? Stance.Orthodox : (GameSession.OpponentStance ?? moves.DefaultStance);
+
+        // AC21 / AC30: tags and build.
+        Expect(root.GetNode<Label3D>("Tag").Text == $"YOU ({name})", $"player tag reads '{root.GetNode<Label3D>("Tag").Text}'");
+        Expect(opponent.GetNode<Label3D>("Tag").Text == $"CPU ({StanceRules.DisplayName(opponentStance)})", "opponent tag does not show its stance");
+        Expect(root.GetNode<Node3D>(leadFoot).Position.X - root.GetNode<Node3D>(rearFoot).Position.X > 0.02f, $"{stance}: the lead foot is not further toward the opponent");
+        var oppLead = StanceRules.LeadSide(opponentStance) == BodySide.Left ? "FootL" : "FootR";
+        var oppRear = oppLead == "FootL" ? "FootR" : "FootL";
+        Expect(opponent.GetNode<Node3D>(oppRear).Position.X - opponent.GetNode<Node3D>(oppLead).Position.X > 0.02f, "the opponent's lead foot is not further toward the player");
+
+        await WaitUntil(() => fighter.State == FighterState.Idle, 60, "idle before the stance script");
+        if (walkClose)
+        {
+            Input.ActionPress(InputActions.FightForward);
+            await WaitUntil(() => fighter.X >= roster.OpponentX - moves.MinSeparationM - 1e-9, 300, "walking close");
+            Input.ActionRelease(InputActions.FightForward);
+            await Frames(2);
+        }
+
+        var rest = SnapshotParts(root);
+        var restSpan = rest["EyeR"].Origin.X - rest["EyeL"].Origin.X;
+        var minExtend = 0.5f * (float)moves.Visual.PunchExtendH * height;
+        float GloveMove(string glove) => (root.GetNode<Node3D>(glove).Position - rest[glove].Origin).X;
+        float Turn() => (root.GetNode<Node3D>("EyeR").Position.X - root.GetNode<Node3D>("EyeL").Position.X) - restSpan; // the eyes ride rigidly with the upper body, so only the torso turn moves them in X
+
+        // AC24 / AC25: the jab is the lead glove with no torso turn, the cross the rear glove with the rear shoulder forward.
+        await Tap(InputActions.FightJab);
+        await WaitUntil(() => fighter.State == FighterState.Jab && fighter.Phase == MovePhase.Active, 12, "jab active");
+        Expect(GloveMove(lead) >= minExtend, $"{stance} jab: {lead} moved {GloveMove(lead):0.000} m, needs {minExtend:0.000}");
+        Expect(GloveMove(rear) <= 0.001f, $"{stance} jab: {rear} moved forward");
+        Expect(Math.Abs(Turn()) < 0.002f, $"{stance} jab turned the torso ({Turn():0.0000})");
+        await WaitUntil(() => fighter.State == FighterState.Idle, 40, "idle after jab");
+        await NextFrame();
+        ExpectPoseAtRest(root, rest, $"after the {stance} jab");
+
+        await Tap(InputActions.FightCross);
+        await WaitUntil(() => fighter.State == FighterState.Cross && fighter.Phase == MovePhase.Active, 14, "cross active");
+        Expect(GloveMove(rear) >= minExtend, $"{stance} cross: {rear} moved {GloveMove(rear):0.000} m, needs {minExtend:0.000}");
+        Expect(GloveMove(lead) <= 0.001f, $"{stance} cross: {lead} moved forward");
+        var turn = Turn();
+        Expect(stance == Stance.Orthodox ? turn > 0.01f : turn < -0.01f, $"{stance} cross: wrong torso turn direction ({turn:0.0000})");
+        _turnSize[stance] = Math.Abs(turn);
+        await WaitUntil(() => fighter.State == FighterState.Idle, 40, "idle after cross");
+        await NextFrame();
+        ExpectPoseAtRest(root, rest, $"after the {stance} cross");
+
+        // AC26: the one-two. The cross starts on the first jab Recovery tick; the jab glove is the lead glove.
+        await Tap(InputActions.FightJab);
+        await WaitUntil(() => fighter.State == FighterState.Jab && fighter.Phase == MovePhase.Recovery, 20, "jab recovery");
+        await Tap(InputActions.FightCross);
+        await WaitUntil(() => fighter.State == FighterState.Cross, 3, "cross out of the jab");
+        await WaitUntil(() => fighter.State == FighterState.Idle, 60, "idle after the one-two");
+        await NextFrame();
+        ExpectPoseAtRest(root, rest, $"after the {stance} one-two");
+
+        // AC27: slips, then a punch out of slip Recovery uses the stance's correct glove; guard raises both gloves.
+        foreach (var (action, state, side) in new[]
+        {
+            (InputActions.FightSlipLeft, FighterState.SlipLeft, -1f),
+            (InputActions.FightSlipRight, FighterState.SlipRight, 1f),
+        })
+        {
+            await Tap(action);
+            await WaitUntil(() => fighter.State == state && fighter.Phase == MovePhase.Active, 12, "slip active");
+            var head = root.GetNode<Node3D>("Head").Position;
+            Expect(head.Y < rest["Head"].Origin.Y - 0.02f, $"{stance} {state}: the head did not dip");
+            Expect((head.Z - rest["Head"].Origin.Z) * side > 0.02f, $"{stance} {state}: the head did not lean to its own side");
+            await WaitUntil(() => fighter.State == state && fighter.Phase == MovePhase.Recovery, 30, "slip recovery");
+            await Tap(side < 0 ? InputActions.FightJab : InputActions.FightCross);
+            var punch = side < 0 ? FighterState.Jab : FighterState.Cross;
+            await WaitUntil(() => fighter.State == punch && fighter.Phase == MovePhase.Active, 14, "punch out of slip recovery");
+            var expectedGlove = side < 0 ? lead : rear;
+            var otherGlove = side < 0 ? rear : lead;
+            Expect(GloveMove(expectedGlove) >= minExtend && GloveMove(otherGlove) <= 0.001f, $"{stance}: wrong glove after {state}");
+            await WaitUntil(() => fighter.State == FighterState.Idle, 60, "idle after slip counter");
+            await NextFrame();
+            ExpectPoseAtRest(root, rest, $"after {stance} {state} and its counter");
+        }
+
+        Input.ActionPress(InputActions.FightGuard);
+        await WaitUntil(() => fighter.State == FighterState.Guarding, 12, "guarding");
+        foreach (var glove in new[] { "GloveL", "GloveR" })
+        {
+            Expect(root.GetNode<Node3D>(glove).Position.Y > rest[glove].Origin.Y + 0.005f, $"{stance} guard: {glove} is not higher than at rest");
+        }
+
+        Input.ActionRelease(InputActions.FightGuard);
+        await WaitUntil(() => fighter.State == FighterState.Idle, 6, "idle after guard");
+        await NextFrame();
+        ExpectPoseAtRest(root, rest, $"after the {stance} guard");
+
+        // AC28: contact text matches the punch whatever the stance (the ring has the player at minimum separation here).
+        await WaitUntil(() => !fight.ContactLabel.Visible, 120, "earlier contact text to clear");
+        await Tap(InputActions.FightJab);
+        await WaitUntil(() => fight.ContactLabel.Visible, 12, "contact text for the jab");
+        Expect(fight.ContactLabel.Text == "Contact: Jab", $"{stance}: unexpected contact text '{fight.ContactLabel.Text}'");
+        await WaitUntil(() => fighter.State == FighterState.Idle && !fight.ContactLabel.Visible, 120, "idle after the contact jab");
+        await Tap(InputActions.FightCross);
+        await WaitUntil(() => fight.ContactLabel.Visible, 14, "contact text for the cross");
+        Expect(fight.ContactLabel.Text == "Contact: Cross", $"{stance}: unexpected contact text '{fight.ContactLabel.Text}'");
+        await WaitUntil(() => fighter.State == FighterState.Idle && !fight.ContactLabel.Visible, 120, "idle after the contact cross");
+        GD.Print($"SMOKE: {stance} player ok (cross torso turn {_turnSize[stance]:0.0000} m of eye span)");
     }
 
     private void CheckInputMap()
