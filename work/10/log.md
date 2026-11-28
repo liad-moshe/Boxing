@@ -9,3 +9,4 @@
 - 2026-11-28 game-designer (final): DONE — arrows removed, spec APPROVED (G2). 7 fight keys + Esc
 - 2026-11-28 developer: DONE — build/tests (141)/smoke pass; ~2.3k lines (already mechanic route, G1 done, no re-ask needed)
 - 2026-11-28 qa: DONE — PASS, 0 defects (141 tests, smoke pass); kb-keeper required next
+- 2026-11-28 kb-keeper: DONE — input-map, feature-map, ui-map updated
