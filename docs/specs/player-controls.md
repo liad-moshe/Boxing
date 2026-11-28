@@ -84,6 +84,7 @@ Order inside one tick: (1) move-timer advance and move end, (2) guard held/relea
 - Player-facing: the boxer's upper body (head, neck, torso, arms) dips by `visual.slipHeadDropH` and leans sideways by `visual.slipLeanDeg` toward the camera side, so the side-on camera sees a clear drop and tilt. Feet stay planted. It returns to stance during Recovery.
 - `IsEvading` is true only during Slip Active. Startup and Recovery are vulnerable: no evade, no block, no walking. The Recovery is the slip's cost; cancelling it into a punch is the reward (counter).
 - Slip has no stamina cost in this task (stamina is out of scope). Nothing punches the player yet, so `IsEvading` and `IsBlocking` are exposed flags with no effect until opponent attacks exist.
+- **Deferred behaviour (decided now, built later with opponent attacks):** `IsEvading` will evade **both** the jab and the cross (the two straight punches), with one slip key and one visual direction. It will **not** evade hooks when hooks are added (hooks need ducking or rotation, not a slip [S3]). Nothing in this task implements this; the flag is generic so no Core change is needed now. GAMEPLAY ABSTRACTION: one slip evades both straight punches instead of the boxer choosing the side that matches each punch, where the wrong side exposes the boxer to the other hand [S2] — one key and a side-on camera cannot show a left/right choice.
 
 ### Contact with the idle opponent (minimal)
 - On each Active tick of a Jab or Cross, Core compares the gap (opponentX - player X) with the move's `reachM`. On the first Active tick where gap <= reach, the punch reports one `Contact` (Jab or Cross). A punch reports at most one contact. Out of range = no contact, no event.
@@ -99,9 +100,9 @@ Order inside one tick: (1) move-timer advance and move end, (2) guard held/relea
 Thin adapter in `game/scripts` reads input, calls Core, and poses the existing fighter parts from `State`, `Phase` and `PhaseFrame` each frame. Code-driven motion only (no AnimationPlayer resources, no external assets, no shaders).
 - Stance: all fighters stand orthodox in M1. The lead hand is the glove on the lead-foot side (the side nearer the opponent); for orthodox that is `GloveL`. The developer confirms which built glove is the lead and documents it.
 - Jab: lead `ForearmL`/`GloveL` move straight forward toward the opponent during Startup to `visual.punchExtendH`, hold through Active, return to guard during Recovery. The rear glove stays up.
-- Cross: rear `GloveR` extends the same way, and the torso, shoulders and head turn by up to `visual.crossTorsoTurnDeg` toward the punch. The lead glove stays up.
+- Cross: rear `GloveR` extends the same way, and the torso, shoulders and head turn by up to `visual.crossTorsoTurnDeg` toward the punch (the cross gets its power and extra reach from the rear-leg push and the hip and shoulder turn [S1][S3][S8]). The lead glove stays up.
 - Guard: both gloves rise by `visual.guardGloveRaiseH` and move inward by `visual.guardGloveInwardW` to cover the face, interpolated over `guard.raiseFrames`; they drop back at once on release.
-- Slip: as described under Slip.
+- Slip: as described under Slip. The look (upper body dips and leans, feet planted) is a readable visual choice, not a claim about how a real slip is built.
 - Every move returns the parts exactly to the build's guard pose when the fighter is Idle (within 1 mm).
 - Visual tuning: `visual.punchExtendH` is tuned so that a punch thrown at gap == reach visibly reaches the opponent's head or gloves, and a punch at gap > reach visibly falls short.
 
@@ -109,10 +110,10 @@ Thin adapter in `game/scripts` reads input, calls Core, and poses the existing f
 AC1 to AC16 are xUnit tests in `tests/Core.Tests` (tick-exact, using the shipped `player-moves.json` and `fighters.json` text). AC17 to AC24 are checked by the headless smoke scene where practical (the smoke may drive input with `Input.ActionPress` / `ActionRelease`) and by the playtest. "Ticks" means `Tick` calls.
 - AC1. **Given** the shipped `data/balance/player-moves.json`, **when** parsed, **then** it has `tickRate`, moves `jab`, `cross`, `slip` with integer frame counts >= 1, positive `reachM` for jab and cross, `guard`, `movement` and `feedback` blocks; **and given** a copy with a 0 or missing frame count, a non-positive speed or reach, an unknown `cancelInto` name, or a bound that excludes `ring.playerX`, **when** parsed, **then** it throws and the message names the bad key.
 - AC2. **Given** an Idle player, **when** Jab is pressed on tick 1 and no other input follows, **then** the state is Jab Startup for exactly `jab.startupFrames` ticks, Active for exactly `jab.activeFrames`, Recovery for exactly `jab.recoveryFrames`, and Idle on the next tick.
-- AC3. **Given** an Idle player, **when** Cross is pressed, **then** the same timeline holds with the `cross` frame counts, and the cross's total ticks are greater than the jab's.
+- AC3. **Given** an Idle player, **when** Cross is pressed, **then** the same timeline holds with the `cross` frame counts; **and** with the shipped data the cross's total ticks (startup + active + recovery) are greater than the jab's and at most 1.5 times the jab's (so the cross is a bit slower and heavier, and the one-two stays usable).
 - AC4. **Given** an Idle player, **when** Slip is pressed, **then** the slip timeline follows the `slip` frame counts, and `IsEvading` is true on every Active tick and false on every Startup, Recovery and Idle tick.
 - AC5. **Given** a Jab in Startup or Active, **when** Jab, Cross or Slip is pressed, **then** nothing changes, and after the jab ends the fighter is Idle (the press was not buffered).
-- AC6. **Given** a Jab in Recovery, **when** Cross is pressed, **then** on that same tick the state is Cross Startup, frame 1 (the one-two cancel); **and when** Jab or Slip is pressed instead, **then** it is ignored.
+- AC6. **Given** a Jab in Recovery, **when** Cross is pressed, **then** on that same tick the state is Cross Startup, frame 1 (the one-two cancel), and that cross uses the normal `cross` frame counts (no shortened startup after a jab); **and given** a jab pressed on tick 1 and Cross pressed on the first Recovery tick (tick 1 + `jab.startupFrames` + `jab.activeFrames`), **then** the fighter is Idle again exactly `cross` total ticks later, i.e. the cancel skips the rest of the jab's recovery; **and when** Jab or Slip is pressed instead, **then** it is ignored.
 - AC7. **Given** a Cross in any phase, **when** Jab, Cross or Slip is pressed, **then** it is ignored and the cross runs to its end.
 - AC8. **Given** a Slip in Recovery, **when** Jab (or Cross) is pressed, **then** on that same tick the state is Jab (or Cross) Startup, frame 1; **and given** a Slip in Startup or Active, **when** any punch is pressed, **then** it is ignored.
 - AC9. **Given** an Idle player, **when** guard is held, **then** the state is GuardRaising with `IsBlocking` false for exactly `guard.raiseFrames` ticks, then Guarding with `IsBlocking` true for as long as it is held; **and when** guard is released, **then** on that tick the state is Idle and `IsBlocking` is false.
@@ -138,24 +139,41 @@ Pointer: `data/balance/player-moves.json` -> `tickRate`; `moves.jab|cross|slip.s
 Parsing and validation happen in Core (text in, exception on bad data); the adapter only reads the file. The file must be included in the exported build, as with fighters.json.
 
 ## Boxing notes
-The source registry (docs/boxing/sources.md) has no entries yet, so this spec makes **no cited real-boxing claims**. Every boxing-flavoured choice is either a GAMEPLAY ABSTRACTION below or listed under "Needs boxing-consultant".
+Reviewed by boxing-consultant on 2026-11-28 (work/10/boxing-review.md). Sources are in docs/boxing/sources.md.
 
-GAMEPLAY ABSTRACTION: move timings are fixed tick counts chosen for game feel and readability instead of measured human punch and slip durations [source pending, see Needs boxing-consultant] — readability and a clear startup/active/recovery rhythm.
-GAMEPLAY ABSTRACTION: the boxer cannot step while punching or slipping instead of moving the feet with the punch as real boxers can [source pending] — readable, committed moves and simple controls.
-GAMEPLAY ABSTRACTION: punches cannot be thrown while guard is held instead of punching straight out of the guard [source pending] — gives guard a clear cost (no offence) and keeps the four moves distinct.
-GAMEPLAY ABSTRACTION: one slip direction on one key instead of slipping to either side depending on the incoming punch [source pending] — small key map (client constraint) and a side-on camera that cannot show left/right depth well.
-GAMEPLAY ABSTRACTION: walking is a smooth glide along one axis instead of real footwork (step-drag, pivots, lateral movement) [source pending] — roadmap M1 limits footwork to basic movement.
-GAMEPLAY ABSTRACTION: contact is a distance rule with no damage or reaction instead of a real hit to a target — the opponent is idle in this task; damage and reactions come with health, stamina and AI.
-GAMEPLAY ABSTRACTION: both boxers share the same reach and timings instead of reach and speed varying by boxer [source pending] — stats are display-only until combat tuning.
+### Real boxing this spec relies on
+- The jab is the lead-hand straight punch and the cross is the rear-hand straight punch; in an orthodox stance the left hand and left foot lead, so `GloveL` is the lead [S1][S3].
+- The cross has farther to travel than the jab and gets its power and extra reach from the rear-leg push and the hip and shoulder turn [S1][S3][S8]. The metre values for reach are tuning values, not measured (no source gives them).
+- The jab then cross (the "one-two") is a basic combination taught as lead straight then rear straight, which justifies the jab -> cross cancel [S1][S2][S3]. Punches thrown in a combination are delivered faster than a single maximal punch [S4].
+- A slip moves the head off the line of an incoming straight punch, taught against the jab and the rear straight, and is followed at once by a counter with both hands free, which justifies Slip Active = evade and Slip Recovery -> punch cancel [S2][S3].
+- A high guard (hands up, chin down, elbows by the ribs) and a tighter cover with both forearms in front protect the head against straight punches [S1][S2][S3]. In real boxing only the punching hand leaves the guard while the other hand stays up and the punching hand returns along the same line [S1][S2].
+- Real timing scale: throw to first contact about 0.11 to 0.14 s for jab and cross [S6]; a whole punch (out, contact, back) about 0.4 to 0.5 s [S5][S6]; contact itself about 0.02 to 0.03 s [S7]; defenders may have more time to evade than older estimates said [S4]. No allowed source gives real slip durations.
 
-### Needs boxing-consultant
-Claims the spec relies on that need a source, a correction, or an abstraction line:
-1. The jab is thrown with the lead hand and the cross with the rear hand; in an orthodox stance the lead hand is the left.
-2. The cross is slower to start and to recover than the jab, and reaches slightly further, because of hip and shoulder rotation.
-3. The jab followed by the cross (the "one-two") is a fundamental combination, which justifies the jab -> cross cancel.
-4. A slip moves the head off the line of a straight punch by bending at the knees and waist, works against straight punches, and leaves the boxer set to counter, which justifies slip Active = evade and slip Recovery -> punch cancel.
-5. A high guard with both gloves by the face protects the head, and punching opens it.
-6. A rough real-world scale for jab, cross and slip durations (peer-reviewed if possible), so the tick values in the data file stay in a believable ratio even though they are abstractions.
+### GAMEPLAY ABSTRACTION lines
+GAMEPLAY ABSTRACTION: jab and cross use fixed tick timings chosen for rhythm instead of measured durations (throw about 0.1 s, whole punch about 0.4 to 0.5 s [S5][S6]) — a readable startup/active/recovery beat; the jab total is deliberately quicker than real.
+GAMEPLAY ABSTRACTION: the cross is a bit slower and heavier than the jab (total about 1.4 times) instead of nearly equal in speed [S4][S5][S6] — gives the cross a risk-versus-reward cost with only two punches; the gap is kept small because real speeds are close.
+GAMEPLAY ABSTRACTION: slip timings are tuning values instead of measured durations (none exist in the allowed sources; a generous evade window fits [S4]) — a clear, learnable window.
+GAMEPLAY ABSTRACTION: reach is a root-to-root distance (jab shorter than cross) instead of arm length, stance and step length [S1][S3] — one readable range rule.
+GAMEPLAY ABSTRACTION: the boxer cannot step while punching or slipping instead of stepping with the punch [S9] — committed moves and simple controls.
+GAMEPLAY ABSTRACTION: held guard is a separate committed state with no punching, instead of punching out of the guard with the free hand kept up [S1][S2] — gives guard a clear cost and keeps the four moves distinct. Both hands close together because guard is its own state.
+GAMEPLAY ABSTRACTION: the idle pose is the stance guard and "Guard" is a tighter cover with a short raise instead of one continuous guard that is always up [S1][S3] — a visible state the player controls.
+GAMEPLAY ABSTRACTION: one slip direction on one key instead of a side chosen against each punch [S2] — small key set and a side-on camera. Once opponent attacks exist the one slip will evade both jab and cross (see Slip).
+GAMEPLAY ABSTRACTION: the only chains are jab -> cross and slip -> punch instead of the wider set such as the double jab, jab to the body and hooks [S1][S3] — M1 has four moves; combos come later.
+GAMEPLAY ABSTRACTION: walking is a smooth glide along one axis instead of step-and-drag footwork and pivots [S1][S8] — roadmap M1 limits footwork; walk speed has no source.
+GAMEPLAY ABSTRACTION: all boxers are orthodox with identical reach and timings instead of southpaws and varied builds [S3] — stats are display-only until combat tuning.
+GAMEPLAY ABSTRACTION: a punch "contact" is a distance check on root positions with no target, damage or reaction instead of a glove landing on a head or body [S7] — the opponent is idle in this task.
+GAMEPLAY ABSTRACTION: no input buffering and no cancel out of Startup or Active instead of a boxer adapting a punch mid-flight — readable, mash-proof rhythm (vision pillar).
+
+### Boxing review outcome
+The designer's decision on each of the consultant's suggestions. The data file is authoritative for the numbers; the table shows the change made.
+
+| # | Suggestion | Decision | Reason |
+|---|---|---|---|
+| C1 | Narrow the jab/cross gap | **Accepted.** Cross startup 10 -> 8, recovery 16 -> 14 (active stays 4), so cross total 30 -> 26 ticks against the jab's 18 (ratio 1.67 -> 1.44). Jab recovery kept at 9 (the optional lift to 12 is **rejected**). | Real startups are nearly equal [S6], so the gap shrinks, but the client wants the cross to feel a bit heavier and the one-two stays usable. A snappy 18-tick jab keeps the rhythm quick, and A1 already marks it as quicker than real. AC3 now also caps the ratio at 1.5. |
+| C2 | Shorter cross startup when it follows a jab | **Rejected for M1.** | The cancel already skips the rest of the jab's recovery, so the one-two is quicker without it. A second startup value would add a data key and a code branch for a small feel gain. Revisit in combat tuning. AC6 is unchanged apart from the timeline check. |
+| C3 | Remove "because of hip and shoulder rotation" as the reason the cross is slower, and the "bend at the knees and waist" slip claim | **Accepted.** | Rotation is the source of the cross's power and reach [S1][S3], not a proven cause of lower speed; the slip look is a visual choice. Both removed from the claims above. |
+| C4 | Guard wording: only the punching hand leaves the guard | **Accepted.** | Stated above with [S1][S2]; the closed-both-hands behaviour is an abstraction line. |
+| Slip direction | Does one slip evade both jab and cross once opponents attack? | **Yes, deferred.** `IsEvading` will evade both straight punches and not hooks. Built with opponent attacks, not now. | A single key cannot choose a side; both punches are straights [S2][S3]. Marked as an abstraction under Slip. |
 
 ## Out of scope
 - Stamina, health, damage, KO, knockdowns, round timer display or round end, points decision, scoring.
@@ -167,14 +185,14 @@ Claims the spec relies on that need a source, a correction, or an abstraction li
 - Input buffering, combos beyond the two cancel rules above.
 
 ## Open questions
-1. Guard key: S (left hand, next to the move keys) or L (right hand, next to the punch keys)? S is proposed because guard and punches are exclusive, so the punching hand never needs to reach for guard.
-2. Should the arrow keys Left/Right also move the boxer as an alternative to A/D? They are free in the fight scene (only the select screen uses them), but the brief asked to avoid menu keys, so this spec does not bind them.
-3. Is one slip direction acceptable for M1, or does the client want slip-left and slip-right (one more key, 8 total)?
+1. Guard key: S (left hand, next to the move keys) or L (right hand, next to the punch keys)? **Recommendation: S.** Guard and punches are exclusive, so the punching hand never needs to reach for guard, and the left hand already sits on the move keys.
+2. Should the arrow keys Left/Right also move the boxer as an alternative to A/D? **Recommendation: no for M1.** The brief asked to avoid menu keys, a small key set reads better in the controls hint, and adding the alternate later is a one-line input-map change.
+3. Is one slip direction acceptable for M1, or does the client want slip-left and slip-right (one more key, 8 total)? **Recommendation: one direction.** The side-on camera cannot show a left/right choice well and the opponent has no attacks yet; if kept, one slip will evade both jab and cross later (see Slip). Revisit when opponent AI arrives.
 
 ## Playtest checklist
 Five things the client checks by hand at G3.
 1. Pick both boxers: the ring appears with a controls hint at the bottom. Hold D: your boxer (left, "YOU") glides toward the opponent and stops a short distance in front of it without passing through. Hold A: it backs away and stops before leaving the floor.
 2. From the starting distance press J: the lead glove shoots forward and comes back, and no "Contact" text appears. Walk close and press J, then K: each punch shows "Contact: Jab" / "Contact: Cross" at the top for under a second, and the gloves visibly reach the opponent, who does not react.
-3. Press K by itself and then J by itself: the cross feels clearly slower and heavier (body turns) than the jab. Press J then quickly K: the cross follows the jab smoothly as a one-two. Mash J and K fast: the boxer does not throw faster than the moves allow.
+3. Press K by itself and then J by itself: the cross feels a bit slower and heavier (body turns) than the jab, but not sluggish. Press J then quickly K: the cross follows the jab smoothly as a one-two. Mash J and K fast: the boxer does not throw faster than the moves allow.
 4. Hold S: both gloves come up to cover the face and the boxer walks more slowly with A/D; pressing J or K does nothing until you let go of S. Hold J for two seconds: only one jab is thrown.
 5. Press Space: the boxer's upper body dips and leans, then comes back; press J or K right as it comes back and the punch fires straight out of the slip. Press Escape at any moment: you are back at the menu, and a new fight starts fresh.

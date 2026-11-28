@@ -2,3 +2,4 @@
 - 2026-11-28 G1: client approved full route (designer opus, boxing, developer, qa, kb)
 - 2026-11-28 game-designer: DONE — docs/specs/player-controls.md + data/balance/player-moves.json; 3 client questions; escalate to boxing-consultant
 - 2026-11-28 boxing-consultant: DONE — work/10/boxing-review.md, sources S1-S9; 1 SUGGEST-CHANGE (cross timing); escalate to game-designer
+- 2026-11-28 game-designer (revision): DONE — spec updated after boxing review (cross 8/4/14); G2 pending, 3 open client questions

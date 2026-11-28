@@ -1,9 +1,9 @@
 {
-  "_comment": "Player moves and movement for the fight scene (issue #10, spec docs/specs/player-controls.md). Timings are whole simulation ticks at tickRate (60 ticks = 1 second; seconds in each _comment are for humans only). Distances are metres along the side-on X axis, measured between fighter root positions. All values are GAMEPLAY ABSTRACTION starting points pending boxing-consultant review, not measured boxing data.",
+  "_comment": "Player moves and movement for the fight scene (issue #10, spec docs/specs/player-controls.md). Timings are whole simulation ticks at tickRate (60 ticks = 1 second; seconds in each _comment are for humans only). Distances are metres along the side-on X axis, measured between fighter root positions. All values are GAMEPLAY ABSTRACTION tuning values, not measured boxing data; the boxing review (work/10) set the jab/cross gap so the cross is a bit slower and heavier, not clearly slower.",
   "tickRate": 60,
   "moves": {
     "jab": {
-      "_comment": "Lead hand. 6/3/9 ticks = 0.10 s / 0.05 s / 0.15 s, total 0.30 s.",
+      "_comment": "Lead hand. 6/3/9 ticks = 0.10 s / 0.05 s / 0.15 s, total 18 ticks = 0.30 s. Startup matches a measured throw-to-contact of about 0.12 s; the total is deliberately snappier than a real whole punch (about 0.4 to 0.5 s).",
       "startupFrames": 6,
       "activeFrames": 3,
       "recoveryFrames": 9,
@@ -11,15 +11,15 @@
       "cancelInto": ["cross"]
     },
     "cross": {
-      "_comment": "Rear hand. 10/4/16 ticks = 0.17 s / 0.07 s / 0.27 s, total 0.50 s. Slower and more committed than the jab, slightly longer reach.",
-      "startupFrames": 10,
+      "_comment": "Rear hand. 8/4/14 ticks = 0.13 s / 0.07 s / 0.23 s, total 26 ticks = 0.43 s (about 1.44 x the jab total). A bit slower and heavier than the jab, slightly longer reach; the gap is small on purpose because real jab and cross speeds are close. Keep cross total <= 1.5 x jab total so the one-two stays usable (checked by AC3).",
+      "startupFrames": 8,
       "activeFrames": 4,
-      "recoveryFrames": 16,
+      "recoveryFrames": 14,
       "reachM": 1.25,
       "cancelInto": []
     },
     "slip": {
-      "_comment": "3/15/12 ticks = 0.05 s / 0.25 s / 0.20 s, total 0.50 s. Evading only during active. Recovery can be cancelled into a punch (counter).",
+      "_comment": "3/15/12 ticks = 0.05 s / 0.25 s / 0.20 s, total 0.50 s. Evading only during active. Recovery can be cancelled into a punch (counter). No source gives real slip durations: tuning values.",
       "startupFrames": 3,
       "activeFrames": 15,
       "recoveryFrames": 12,
