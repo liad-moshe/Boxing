@@ -90,7 +90,8 @@ public sealed class MoveSet
         double minX,
         double minSeparationM,
         int contactTextFrames,
-        VisualTuning visual)
+        VisualTuning visual,
+        Stance defaultStance)
     {
         TickRate = tickRate;
         _moves = moves;
@@ -101,6 +102,7 @@ public sealed class MoveSet
         MinSeparationM = minSeparationM;
         ContactTextFrames = contactTextFrames;
         Visual = visual;
+        DefaultStance = defaultStance;
     }
 
     public int TickRate { get; }
@@ -118,6 +120,9 @@ public sealed class MoveSet
     public int ContactTextFrames { get; }
 
     public VisualTuning Visual { get; }
+
+    /// <summary>The stance each Character Select step starts on, and both fighters' stance on a direct ring launch (stance.default).</summary>
+    public Stance DefaultStance { get; }
 
     /// <summary>True for Jab, Cross, SlipLeft and SlipRight.</summary>
     public static bool IsTimedMove(FighterState state) =>
@@ -144,6 +149,10 @@ public sealed class MoveSet
         {
             var root = doc.RootElement;
             var tickRate = WholeNumber(root, "tickRate", "root", 1);
+
+            var stanceText = Require(Require(root, "stance", "root"), "default", "stance");
+            var defaultStance = (stanceText.ValueKind == JsonValueKind.String ? StanceRules.Parse(stanceText.GetString()) : null)
+                ?? throw new MoveDataException($"stance.default must be \"orthodox\" or \"southpaw\", got {stanceText}");
 
             var movesEl = Require(root, "moves", "root");
             var moves = new Dictionary<FighterState, MoveDef>();
@@ -185,7 +194,7 @@ public sealed class MoveSet
                     $"ring.playerX ({playerX}) is closer than movement.minSeparationM ({minSeparation}) to ring.opponentX ({opponentX})");
             }
 
-            return new MoveSet(tickRate, moves, raise, multiplier, walk, minX, minSeparation, textFrames, visual);
+            return new MoveSet(tickRate, moves, raise, multiplier, walk, minX, minSeparation, textFrames, visual, defaultStance);
         }
     }
 

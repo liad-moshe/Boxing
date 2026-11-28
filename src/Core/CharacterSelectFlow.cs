@@ -21,10 +21,14 @@ public enum SelectBackResult
 public sealed class CharacterSelectFlow
 {
     private readonly FighterRoster _roster;
+    private readonly Stance _defaultStance;
 
-    public CharacterSelectFlow(FighterRoster roster)
+    public CharacterSelectFlow(FighterRoster roster, Stance defaultStance = Stance.Orthodox)
     {
         _roster = roster;
+        _defaultStance = defaultStance;
+        PlayerStance = defaultStance;
+        OpponentStance = defaultStance;
     }
 
     public SelectStep Step { get; private set; } = SelectStep.PickPlayer;
@@ -32,6 +36,29 @@ public sealed class CharacterSelectFlow
     public string? PlayerId { get; private set; }
 
     public string? OpponentId { get; private set; }
+
+    public Stance PlayerStance { get; private set; }
+
+    public Stance OpponentStance { get; private set; }
+
+    /// <summary>
+    /// Flips the stance of the boxer being picked in the current step. Returns false and changes nothing once
+    /// the step is <see cref="SelectStep.Done"/>.
+    /// </summary>
+    public bool ToggleStance()
+    {
+        switch (Step)
+        {
+            case SelectStep.PickPlayer:
+                PlayerStance = StanceRules.Toggle(PlayerStance);
+                return true;
+            case SelectStep.PickOpponent:
+                OpponentStance = StanceRules.Toggle(OpponentStance);
+                return true;
+            default:
+                return false;
+        }
+    }
 
     public bool Confirm(string fighterId)
     {
@@ -43,6 +70,7 @@ public sealed class CharacterSelectFlow
         if (Step == SelectStep.PickPlayer)
         {
             PlayerId = fighterId;
+            OpponentStance = _defaultStance;
             Step = SelectStep.PickOpponent;
         }
         else
@@ -61,9 +89,12 @@ public sealed class CharacterSelectFlow
             case SelectStep.PickPlayer:
                 PlayerId = null;
                 OpponentId = null;
+                PlayerStance = _defaultStance;
+                OpponentStance = _defaultStance;
                 return SelectBackResult.GoToMenu;
             case SelectStep.PickOpponent:
                 OpponentId = null;
+                OpponentStance = _defaultStance;
                 Step = SelectStep.PickPlayer;
                 return SelectBackResult.GoToPlayerStep;
             default:
