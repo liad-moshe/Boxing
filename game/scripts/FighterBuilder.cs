@@ -168,7 +168,7 @@ public static class FighterBuilder
     }
 
     /// <summary>Basis whose Y axis points along <paramref name="dir"/> (unit length).</summary>
-    private static Basis Orient(Vector3 dir)
+    internal static Basis Orient(Vector3 dir)
     {
         var axis = Vector3.Up.Cross(dir);
         if (axis.LengthSquared() < 1e-8f)
