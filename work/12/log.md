@@ -3,3 +3,4 @@
 - 2026-11-28 boxing-consultant: DONE — 3 CHANGEs (add S10, drop S8 claim, reword same-hand rule), equal timings kept
 - 2026-11-28 game-designer: DONE — boxing changes applied, spec READY FOR G2 (sonnet revision)
 - 2026-11-28 client: G2 rescope — stance-based hands, stance chosen in Character Select (option 2); 4-key draft dropped
+- 2026-11-28 game-designer: DONE — spec rewritten for stance (J jab lead, K cross rear; Up/Down stance in Char Select); 7 boxing questions

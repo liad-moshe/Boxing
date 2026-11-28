@@ -1,268 +1,297 @@
 # Spec: Player controls (playable fight, idle opponent)
 
-Status: READY FOR G2 (issue #12 amendment, boxing review applied; the issue #10 version was APPROVED by the client at G2, 2026-11-28)   Issue: #12 (amends #10)
+Status: DRAFT (issue #12 amendment: stance; the issue #10 version was APPROVED by the client at G2, 2026-11-28)   Issue: #12 (amends #10)
 
 ## What changed for issue #12
-Jab and cross are each split into a **left-hand** and a **right-hand** version, so the player has four punch keys instead of two. Everything else (walking, guard, slips, timings, no input buffer, contact rule, idle opponent) is unchanged from the approved #10 version, apart from the rules that name the punches. Summary of the deltas:
-- Actions `fight_jab` (J) and `fight_cross` (K) are **replaced** by `fight_jab_left` (J), `fight_jab_right` (K), `fight_cross_left` (U), `fight_cross_right` (I). **K changes meaning** (it was the cross, it is now the right jab). See Client decisions needed.
-- States `Jab` / `Cross` become `LeftJab`, `RightJab`, `LeftCross`, `RightCross`; the `Contact` result and the contact text name the hand.
-- One-two cancel: a jab's Recovery cancels only into the **other hand's** cross (left jab -> right cross, right jab -> left cross). Slip Recovery cancels into any of the four punches.
-- Data: `moves.jab|cross` become `moves.leftJab|rightJab|leftCross|rightCross` (same numbers, mirrored); one new visual key `visual.rearJabTurnDeg`.
-- Stance stays orthodox for every boxer. A right jab and a left cross are therefore a rear-hand jab and a lead-hand cross. They are game inventions (GAMEPLAY ABSTRACTION, see Boxing notes): in real boxing "jab" and "cross" name the lead and the rear hand's role, not left or right [S10].
+The client rejected the earlier 4-key draft. This version keeps the two punch keys of #10 and adds **stance**.
+- **Keys unchanged:** J = jab, K = cross, exactly as on main. No new fight key, no renamed action.
+- **Jab = lead hand, cross = rear hand**, as in real boxing [S10]. Which glove that is depends on the boxer's stance: **orthodox** (left hand and left foot lead) or **southpaw** (the mirror: right hand and right foot lead) [S10][S3].
+- **Stance is chosen per boxer in Character Select**, in each of the two steps, with Up / Down (the existing `menu_up` / `menu_down` actions, so no new key) or a mouse click on the stance line. Default: `stance.default` (orthodox). See "Stance choice (Character Select)" and the amendment in docs/specs/character-select.md.
+- **Southpaw is a mirror:** mirrored build, mirrored punch animation and mirrored cross torso turn. **Same tick timings, reach, cancels and priority** in both stances.
+- Walking, guard, slips (boxer-relative sides), the one-two cancel, slip-recovery cancels, no input buffer and the contact rule are **unchanged from #10**.
+- Data: `moves.jab` / `moves.cross` as on main; one new block `stance.default`. No `visual.rearJabTurnDeg`.
+- **No in-fight stance switch** (later task).
 
 ## Goal
-When the player confirms both boxers in Character Select, the ring becomes a fight scene: the player's boxer walks forward and back and throws a jab or a cross with either glove, holds a guard and slips to either side, all from the keyboard. The opponent stands idle. This sets the timing rules (startup, active, recovery, cancels) that stamina, damage and AI will build on later, now with a choice of hand for each straight punch.
+When the player confirms both boxers (and their stances) in Character Select, the ring becomes a fight scene: the player's boxer walks forward and back, throws a jab with the lead hand and a cross with the rear hand, holds a guard and slips to either side, all from the keyboard. The opponent stands idle in its chosen stance. This sets the timing rules (startup, active, recovery, cancels) that stamina, damage and AI will build on later.
 
 ## Player story
-As a player, I want to choose which glove throws my jab or my cross, and to step in and out of range, guard and slip left or right with a handful of keys, so that I can feel the rhythm of the basic boxing moves and build simple two-handed combinations before the opponent fights back.
+As a player, I want to pick whether each boxer fights orthodox or southpaw, and then step in and out of range, jab, cross, guard and slip with a handful of keys, so that I can feel the rhythm of the basic boxing moves from either stance before the opponent fights back.
 
 ## Scene flow (how the fight is entered)
-- Unchanged flow: Menu -> New Game -> Select step 1 -> Select step 2 -> confirm -> `game/scenes/Main.tscn`. The ring scene **is** the fight scene; no new scene file is required. The player fighter (left, "YOU") gets the controls; the opponent (right, "CPU") stays idle.
-- Controls are live on the first physics tick of the ring. There is no countdown, intro or "Fight!" banner (vision pillar 3: launch to first punch in seconds).
-- The confirm key (Enter) is not a fight key, so a held Enter from the select screen does nothing in the fight. The arrow keys are not fight keys, so an arrow still held from the select screen does nothing in the fight.
-- Escape (`ui_back`) behaves exactly as today: back to the menu, picks cleared. It works in any move state. New Game again starts a fresh fight with the player back at `ring.playerX` in Idle.
-- Direct launch of `Main.tscn` (smoke test) still works: both fighters fall back to the first roster entry and the player is controllable.
-- The existing invisible round clock keeps running unchanged; nothing happens when it reaches zero (round logic is out of scope).
-- A one-line controls hint is shown at the bottom of the screen in the fight (code-built `Label`, default font): `A / D  move    J / K  jab L / R    U / I  cross L / R    S  guard (hold)    Q / E  slip L / R    Esc  menu`. The labels name the key **positions** on a QWERTY layout (see Controls). If the line is wider than the window at the default resolution, the developer may split it into two lines; the content stays the same.
+- Flow: Menu -> New Game -> Select step 1 (boxer + stance) -> Select step 2 (opponent + stance) -> confirm -> `game/scenes/Main.tscn`. The ring scene **is** the fight scene; no new scene file. The player fighter (left, "YOU") gets the controls; the opponent (right, "CPU") stays idle.
+- Controls are live on the first physics tick of the ring. No countdown, intro or "Fight!" banner (vision pillar 3).
+- Enter, the arrow keys (including Up / Down used for stance) are not fight keys, so a key still held from the select screen does nothing in the fight.
+- Escape (`ui_back`) behaves exactly as today: back to the menu, picks **and stances** cleared. It works in any move state. New Game again starts a fresh fight with the player at `ring.playerX` in Idle.
+- Direct launch of `Main.tscn` (smoke test): both fighters fall back to the first roster entry **and to `stance.default`**; the player is controllable.
+- The invisible round clock keeps running unchanged.
+- Controls hint at the bottom of the fight screen: unchanged from #10 (A / D move, J jab, K cross, S guard (hold), Q / E slip L / R, Esc menu). It names punches, not gloves, so it is the same in both stances.
+- Each fighter's floating `Tag` shows its stance: `YOU (Orthodox)` / `YOU (Southpaw)` and `CPU (Orthodox)` / `CPU (Southpaw)`.
 
 ## Controls
-Nine fight actions, all bound by **physical keycode** (key position, so AZERTY and other layouts get the same hand shape). They are in the `[input]` section of project.godot (not code-registered), so the kb-check covers them. Each action has exactly one key event.
+### Fight (ring) — unchanged from #10
+All bound by **physical keycode** in the `[input]` section of project.godot, one key event each.
 
 | Action | Key (physical) | Type | Notes |
 |---|---|---|---|
-| fight_forward | D | held | Unchanged. Walk toward the opponent (+X for the player on the left). |
-| fight_back | A | held | Unchanged. Walk away from the opponent (-X). Forward and back together cancel out (no movement). |
-| fight_jab_left | J | press | **New (replaces `fight_jab`, same key).** Jab with the boxer's left glove (`GloveL`, the lead hand in orthodox). Fresh press only; key repeat (echo) and holding never throw a second punch. |
-| fight_jab_right | K | press | **New (K was `fight_cross`).** Jab with the boxer's right glove (`GloveR`, the rear hand in orthodox). Fresh press only. |
-| fight_cross_left | U | press | **New.** Cross with the boxer's left glove (`GloveL`). Fresh press only. |
-| fight_cross_right | I | press | **New.** Cross with the boxer's right glove (`GloveR`, the rear hand in orthodox: the #10 cross). Fresh press only. |
-| fight_guard | S | **hold** | Unchanged. Guard is up while held, down on release. |
-| fight_slip_left | Q | press | Unchanged. Slip to the boxer's left. Fresh press only. |
-| fight_slip_right | E | press | Unchanged. Slip to the boxer's right. Fresh press only. |
+| fight_forward | D | held | Walk toward the opponent (+X for the player on the left). |
+| fight_back | A | held | Walk away from the opponent (-X). Forward and back together cancel out. |
+| fight_jab | J | press | Jab with the **lead** glove: `GloveL` in orthodox, `GloveR` in southpaw. Fresh press only; key repeat and holding never throw a second punch. |
+| fight_cross | K | press | Cross with the **rear** glove: `GloveR` in orthodox, `GloveL` in southpaw. Fresh press only. |
+| fight_guard | S | **hold** | Guard up while held, down on release. |
+| fight_slip_left | Q | press | Slip to the **boxer's own** left, in either stance. Fresh press only. |
+| fight_slip_right | E | press | Slip to the **boxer's own** right, in either stance. Fresh press only. |
 | ui_back | Escape | press | Existing, unchanged. |
 
-`fight_jab` and `fight_cross` are **removed** from project.godot (no alias is kept, so no key can fire two actions).
+### Character Select — stance (new behaviour on existing actions)
+| Action | Key | Notes |
+|---|---|---|
+| menu_up | Up arrow (physical) | Existing action (project.godot). **New use on this screen:** toggle the stance of the boxer being picked in the current step. Fresh press only. |
+| menu_down | Down arrow (physical) | Existing action. Same as Up (two options, so either key flips orthodox <-> southpaw). Fresh press only. |
+| (mouse) | Left click on the stance line | Toggles the stance. Control mouse signal, no InputMap action. |
 
-**Key count: 9 fight keys + Escape = 10 keys** (A, D, S, Q, E, J, K, U, I, Esc). Justification:
-- **Left and right always mean the boxer's own hands**, the same rule as the slips (client decision 4 of #10). The player faces +X and the camera sits on the +Z side, so the right glove is the one **nearer the camera** and the left glove is the one further from it. They are not screen directions.
-- **A 2 x 2 punch grid under the right hand.** Column = glove: the left column (J, U) throws with the left glove, the right column (K, I) with the right glove, so the key's side matches the glove's side. Row = punch: the home row (J, K) is the jab, the quick punch thrown most, where the fingers rest; the row above (U, I) is the cross, the heavier punch, a short reach up. The right index finger covers J and U, the middle finger K and I; the hand never leaves home position.
-- **The orthodox one-two is J then I** (left jab, right cross: a short diagonal roll up and right). The mirrored one-two is K then U.
-- The left hand stays on Q, E, A, S, D exactly as in #10 (move, guard, slips). Two hands, no stretching, no mouse.
-- Four punch keys is the smallest set that gives every hand-and-punch pair its own key. A "hand modifier" key (for example Shift + J for the right hand) was rejected: chords are slower, harder to read in a playtest, and break the fresh-press rule when the modifier is pressed a tick late.
+**No clash with docs/kb/input-map.md.** No action is added, removed or re-bound; project.godot `[input]` is unchanged. `menu_up` / `menu_down` were listed as "do nothing on the Character Select screen"; they now toggle stance there (kb-keeper updates that note and the handler column: `CharacterSelect._UnhandledInput`). They still do the same as before on the main menu. In the fight, no action uses an arrow key, Enter, Escape or Space. W, L, U, I, O, Space stay free for later moves.
 
-**No clash with docs/kb/input-map.md.** The existing keys are Escape, Up, Down, Enter, keypad Enter (project.godot), Left, Right (code-registered `menu_left` / `menu_right`, Character Select only), and the #10 fight keys D, A, J, K, S, Q, E. J and K are re-assigned to new actions (the old actions are removed); U and I were free. No fight action uses an arrow key, Enter, keypad Enter, Escape or Space. Menu action definitions are not changed. W, L, O, Space, Up and Down stay free for later moves. `game/scripts/InputActions.cs` holds the fight action names and must be updated to the new names (it does not register them).
+## Stance (what it means in this game)
+- Two values: **Orthodox** and **Southpaw**. A stance is fixed for the whole fight; it is set before the fight in Character Select.
+- **Lead and rear.** The lead hand and lead foot are on the side nearer the opponent. Orthodox: lead = left (`GloveL`, `FootL`), rear = right. Southpaw: lead = right (`GloveR`, `FootR`), rear = left [S10][S3].
+- **Jab is the lead hand's punch and cross is the rear hand's punch in both stances** [S10]. J always throws the jab and K always throws the cross; only the glove that moves changes.
+- **Part names stay anatomical.** `GloveL` is always the boxer's left glove, in either stance. Code and tests that need "the lead glove" ask a pure Core helper (below), not a hard-coded name.
+- **Boxer-relative sides do not change with stance.** Q is the boxer's own left and E the boxer's own right in both stances (client decision 4 of #10). In orthodox, slip-left is toward the lead-hand side; in southpaw it is toward the rear-hand side. This is just geometry; which side clears which punch is still deferred.
+- **Stance changes no number.** Timings, reach, cancels, same-tick priority, guard, walking speed and bounds are identical in both stances.
+
+## Stance choice (Character Select)
+Full rules here; docs/specs/character-select.md carries a short amendment pointing to this section.
+- **One stance line per step**, centred under the two cards: `Stance: Orthodox   (Up / Down to change)` or `Stance: Southpaw   (Up / Down to change)`. It is a code-built control with the same style as the cards, default font. It applies to the boxer being picked in **this** step (step 1: the player; step 2: the opponent), whichever card is highlighted. Moving the highlight with Left / Right or the mouse does not change the stance.
+- **Toggle:** a fresh press of Up or Down, or a left click on the stance line, flips Orthodox <-> Southpaw. Key repeat (echo) is ignored, so a held Up toggles once. The stance line must **not** take keyboard focus (so Enter still confirms the highlighted card and never toggles), and a click on it does not confirm a card. Toggles are ignored while a screen change is in progress.
+- **Defaults:** step 1 starts on `stance.default`. Each time step 2 is entered from step 1, the opponent stance starts on `stance.default`.
+- **Confirm** (Enter or click on a card) stores the pick **and** the stance of that step.
+- Step 2's "You:" line shows the player's stance: `You: Mateo Rivera (Southpaw)`.
+- **Escape:** step 2 -> step 1 keeps the player's pick and the player's stance (the stance line shows it), and discards the opponent pick and stance. Step 1 -> menu discards everything. Ring -> menu discards everything; New Game starts fresh with defaults.
+- Same boxer for both picks with different stances is allowed, with no warning.
+- **Pure logic (src/Core):** a `Stance` value (Orthodox, Southpaw) parsed from the data strings `"orthodox"` / `"southpaw"`. `CharacterSelectFlow` gains `PlayerStance`, `OpponentStance` and `ToggleStance()` (toggles the stance of the current step; rejected or no change in `Done`, documented like `Confirm`). Its constructor takes the default stance. `Back()` from `PickOpponent` resets `OpponentStance` to the default and keeps `PlayerStance`.
+- **Hand-off:** `GameSession` gains `PlayerStance` and `OpponentStance` next to the ids; cleared with them; `Main._Ready` falls back to `stance.default` when unset.
 
 ## Fight model (pure logic, src/Core)
-All rules below live in `src/Core` with no Godot reference and are covered by xUnit tests. Suggested types (names are the developer's call): `MoveSet` (parsed from the JSON text, validated), `FighterInput` (one tick of input: `MoveAxis` -1/0/+1, `GuardHeld`, `LeftJabPressed`, `RightJabPressed`, `LeftCrossPressed`, `RightCrossPressed`, `SlipLeftPressed`, `SlipRightPressed`, where the six `Pressed` flags are true only on the tick of a fresh press), and `PlayerFighter` with `Tick(FighterInput)` exposing `State`, `Phase`, `PhaseFrame`, `X`, `IsBlocking`, `IsEvading`, `EvadeSide` (none, Left or Right; non-none only while `IsEvading`) and a per-tick `Contact` result (none, LeftJab, RightJab, LeftCross or RightCross). The adapter builds `MoveAxis` as (`fight_forward` held ? 1 : 0) - (`fight_back` held ? 1 : 0).
+All rules below live in `src/Core` with no Godot reference and are covered by xUnit tests. Types as on main: `MoveSet` (parsed from the JSON text, validated, now also exposing the default stance), `FighterInput` (one tick: `MoveAxis` -1/0/+1, `GuardHeld`, `JabPressed`, `CrossPressed`, `SlipLeftPressed`, `SlipRightPressed`; `Pressed` flags true only on the tick of a fresh press), and `PlayerFighter` with `Tick(FighterInput)` exposing `State`, `Phase`, `PhaseFrame`, `X`, `IsBlocking`, `IsEvading`, `EvadeSide` and a per-tick `Contact` (none, Jab or Cross).
 
-If the developer prefers to keep a `Jab` / `Cross` state plus a separate `Hand` property, that is allowed, as long as tests can observe both the punch type and the hand on every tick and the data keys below are used. The rest of this spec uses the four-state names.
+**`PlayerFighter` does not need the stance** (no rule in this section depends on it). Stance is used only to choose which glove a pose moves. New pure helper (name is the developer's call), e.g. `StanceRules`:
+- `LeadSide(stance)`: Left for Orthodox, Right for Southpaw; `RearSide(stance)` is the other.
+- `PunchSide(move, stance)`: jab -> lead side, cross -> rear side.
+- `MirrorSign(stance)`: +1 for Orthodox, -1 for Southpaw, multiplied onto every boxer-sideways offset and every stance-dependent turn angle (see Visuals).
 
 ### Time
-- The simulation runs in whole ticks at `tickRate` from the data file. Core never uses floating-point seconds for move timing. The Godot adapter calls `Tick` exactly once per `_PhysicsProcess`, and the project's physics tick rate must equal `tickRate` (Godot's default; the adapter logs an error with `GD.PushError` if they differ).
-- **Timeline rule:** a move that starts on tick N occupies ticks N to N + startup + active + recovery - 1: first its Startup ticks, then its Active ticks, then its Recovery ticks. On the next tick the fighter is free and that tick's input is processed normally.
+- Ticks at `tickRate`; Core never uses floating-point seconds for timing. The adapter calls `Tick` once per `_PhysicsProcess`; physics tick rate must equal `tickRate` (`GD.PushError` if not).
+- **Timeline rule:** a move that starts on tick N occupies ticks N to N + startup + active + recovery - 1 (Startup, then Active, then Recovery). The next tick is free and its input is processed normally.
 
-### States
+### States (unchanged from #10)
 | State | Phases | Meaning |
 |---|---|---|
 | Idle | none | Free. Can walk, guard, or start any move. |
 | GuardRaising | none | Guard held, hands coming up for `guard.raiseFrames` ticks. `IsBlocking` false. Can walk (slowed). |
 | Guarding | none | Guard up. `IsBlocking` true. Can walk (slowed). |
-| LeftJab | Startup, Active, Recovery | Jab with the left glove. No walking. |
-| RightJab | Startup, Active, Recovery | Jab with the right glove. No walking. |
-| LeftCross | Startup, Active, Recovery | Cross with the left glove. No walking. |
-| RightCross | Startup, Active, Recovery | Cross with the right glove. No walking. |
-| SlipLeft | Startup, Active, Recovery | Unchanged. `IsEvading` true only in Active, with `EvadeSide` Left. No walking. |
-| SlipRight | Startup, Active, Recovery | Unchanged. `IsEvading` true only in Active, with `EvadeSide` Right. No walking. |
+| Jab | Startup, Active, Recovery | Lead-hand straight. No walking. |
+| Cross | Startup, Active, Recovery | Rear-hand straight. No walking. |
+| SlipLeft | Startup, Active, Recovery | `IsEvading` true only in Active, `EvadeSide` Left. No walking. |
+| SlipRight | Startup, Active, Recovery | `IsEvading` true only in Active, `EvadeSide` Right. No walking. |
 
-"A jab" below means LeftJab or RightJab; "a cross" means LeftCross or RightCross; "a punch" means any of the four. **The other hand's cross** of LeftJab is RightCross, and of RightJab is LeftCross.
-
-### What each input does, per state
+### What each input does, per state (unchanged from #10)
 Order inside one tick: (1) move-timer advance and move end, (2) guard held/released, (3) fresh presses, (4) walking, (5) contact check.
 
-"Slip press" means either slip key (Q or E); both rows of behaviour are identical, only the side differs.
+| From state | Jab (J) | Cross (K) | Slip press (Q or E) | Guard held | Walking |
+|---|---|---|---|---|---|
+| Idle | start Jab | start Cross | start that slip | -> GuardRaising | yes, full speed |
+| GuardRaising / Guarding | ignored | ignored | start that slip | stays; release -> Idle on that tick | yes, x `guard.moveSpeedMultiplier` |
+| Jab Startup / Active | ignored | ignored | ignored | ignored until move ends | no |
+| Jab Recovery | ignored | **cancel: start Cross** (one-two) | ignored | ignored until move ends | no |
+| Cross, any phase | ignored | ignored | ignored | ignored until move ends | no |
+| Slip Startup / Active | ignored | ignored | ignored (including the other side) | ignored until move ends | no |
+| Slip Recovery | **cancel: start Jab** | **cancel: start Cross** | ignored (no slip-to-slip) | ignored until move ends | no |
 
-| From state | Left jab (J) | Right jab (K) | Left cross (U) | Right cross (I) | Slip press (L or R) | Guard held | Walking |
-|---|---|---|---|---|---|---|---|
-| Idle | start LeftJab | start RightJab | start LeftCross | start RightCross | start that slip | -> GuardRaising | yes, full speed |
-| GuardRaising / Guarding | ignored | ignored | ignored | ignored | start that slip | stays; release -> Idle on that tick | yes, x `guard.moveSpeedMultiplier` |
-| Any jab, Startup / Active | ignored | ignored | ignored | ignored | ignored | ignored until move ends | no |
-| LeftJab Recovery | ignored | ignored | ignored | **cancel: start RightCross** (one-two) | ignored | ignored until move ends | no |
-| RightJab Recovery | ignored | ignored | **cancel: start LeftCross** (mirrored one-two) | ignored | ignored | ignored until move ends | no |
-| Any cross, any phase | ignored | ignored | ignored | ignored | ignored | ignored until move ends | no |
-| Slip Startup / Active | ignored | ignored | ignored | ignored | ignored (including the other side) | ignored until move ends | no |
-| Slip Recovery | **cancel: start LeftJab** | **cancel: start RightJab** | **cancel: start LeftCross** | **cancel: start RightCross** | ignored (no slip-to-slip chain) | ignored until move ends | no |
+- Cancel targets come from `moves.<move>.cancelInto`; shipped values are exactly the table (jab -> cross; slips -> jab, cross; cross -> nothing). Only Recovery can be cancelled.
+- **The one-two is lead jab then rear cross in both stances** (orthodox: left then right; southpaw: right then left). Stance changes nothing in the rule or the ticks; it changes only which glove the pose moves.
+- **Slip recovery cancels the same in both stances**, into the jab (lead hand) or the cross (rear hand), whichever slip side was used.
+- No jab -> jab (no double jab). This is a scope and readability choice, not a boxing rule (see abstraction lines).
+- **No input buffer.** An ignored press is dropped.
+- **Same-tick priority:** drop presses the current state does not allow, then start only the first allowed of SlipLeft, SlipRight, Jab, Cross.
+- **Guard hold is level-based.** Held on the tick a move ends -> GuardRaising. Release -> Idle that tick. While guard is held, jab and cross are ignored. A guard and a punch on the same tick from Idle: guard wins.
+- A walk key held when a move starts stops walking for the move; walking resumes on the free tick if still held.
 
-- The cancel targets come from `moves.<move>.cancelInto` in the data file; the shipped values are exactly the table above (leftJab -> rightCross; rightJab -> leftCross; slipLeft and slipRight -> any of the four punches; crosses -> nothing). Only the Recovery phase can be cancelled. Startup and Active never are.
-- **No same-hand jab -> cross and no jab -> jab.** A left jab does not cancel into a left cross, and no jab cancels into a jab (no double jab, as in #10). This is a scope and readability choice for M1, not a boxing rule: a same-hand repeat such as a double jab is real boxing [S1][S3] and may come in a later task (GAMEPLAY ABSTRACTION, see Boxing notes).
-- **No input buffer.** A press that is ignored is dropped; it does not fire later. Mashing during a move does nothing (vision: button-mashing doesn't win).
-- **Same-tick priority** when more than one fresh press arrives on one tick: first the presses that the current state does not allow (the "ignored" cells above) are dropped; then, of the allowed presses, only the first in this order starts: SlipLeft, SlipRight, LeftJab, RightJab, LeftCross, RightCross. The others are dropped. This is the #10 rule (allowed first, then fixed order) with the four punches in place of two. Examples: J and I on one tick from Idle -> LeftJab starts (the cross is dropped, not queued); U and I on one tick in LeftJab Recovery -> RightCross starts (LeftCross is not allowed there); K and J on one tick from Idle -> LeftJab starts.
-- **Pressing both hands "at once" never throws both.** There is no two-glove punch; a near-simultaneous press is either one tick (priority above) or two ticks (the second press is handled by the state the first one started, usually ignored).
-- **Guard hold is level-based.** If guard is still held on the tick a move ends (or is held when nothing else starts from Idle), the fighter enters GuardRaising. Releasing guard from GuardRaising or Guarding returns to Idle on that tick. While guard is held, all four punches are ignored: to punch, the player must release guard. GAMEPLAY ABSTRACTION (see Boxing notes).
-- A guard press and any punch press on the same tick from Idle: guard wins, the punch is ignored.
-- A walk key held when a move starts stops walking for the move's duration; walking resumes automatically on the free tick if the key is still held.
+### Movement and bounds (unchanged from #10)
+- Only the player moves, only along X: `MoveAxis` x `movement.walkSpeedMps` / `tickRate` per walking tick (x `guard.moveSpeedMultiplier` while GuardRaising or Guarding).
+- Start `ring.playerX`; opponent fixed at `ring.opponentX` (fighters.json).
+- Bounds every tick after walking: `movement.minX` <= X <= opponentX - `movement.minSeparationM`. Load fails with a clear exception if `minX` > `ring.playerX` or `ring.playerX` > `ring.opponentX` - `minSeparationM`.
+- Root Y and Z never change.
 
-### Movement and bounds
-Unchanged from #10.
-- Only the player moves, only along X. Each walking tick, `X` changes by `MoveAxis` x `movement.walkSpeedMps` / `tickRate` (x `guard.moveSpeedMultiplier` while GuardRaising or Guarding).
-- Start position: `ring.playerX` from `data/balance/fighters.json`. Opponent position: `ring.opponentX`, fixed.
-- Bounds, applied every tick after walking: `movement.minX` <= X <= opponentX - `movement.minSeparationM`. The player stops at the bound (no bounce, no push of the opponent). Loading fails with a clear exception if `minX` > `ring.playerX` or if `ring.playerX` > `ring.opponentX` - `minSeparationM`.
-- Depth (Z) and height (Y) of the fighter root never change.
+### Slip (unchanged from #10)
+- Sides are the **boxer's own** in either stance. For the player (facing +X, camera on the +Z side) the boxer's right is toward the camera and the left away from it. Slip direction in real boxing depends on the incoming punch [S2], so the side is a player choice that names a body side. Slips do not move the root.
+- Look (both sides, both stances): upper body dips by `visual.slipHeadDropH`, leans toward the chosen side by `visual.slipLeanDeg`, shoulders turn by `visual.slipTurnDeg` in opposite directions for left and right; feet planted; return to stance during Recovery. Slip offsets follow the chosen side and are **not** mirrored by stance; they are applied on top of the boxer's (possibly mirrored) guard pose.
+- `IsEvading` only in Active, with `EvadeSide`. No stamina cost. No effect yet (nothing punches the player).
+- Deferred: which slip side clears which incoming punch (opponent-attack spec, with a boxing review [S2][S3]); slips will not evade hooks [S3].
 
-### Slip (two sides)
-Unchanged from #10, except that a slip's Recovery now cancels into any of the four punches.
-- **What left and right mean.** The sides are the **boxer's own**: slip-left moves the head to the boxer's left (the lead-hand side for an orthodox boxer), slip-right to the boxer's right (the rear-hand side). They are **not** screen directions. The boxer's right is the side **toward the camera** and the boxer's left is **away from the camera**. Slip direction in real boxing depends on the incoming punch [S2], so the side must be a player choice that names a body side. The slips do **not** move the boxer along X.
-- **Player-facing look (both sides share the same timing and the same dip).** The upper body dips by `visual.slipHeadDropH`, leans sideways toward the chosen side by `visual.slipLeanDeg`, and the shoulders turn about the vertical axis by `visual.slipTurnDeg`, in opposite directions for left and right. Feet stay planted. The pose returns to stance during Recovery. The look is a readable visual choice, not a claim about how a real slip is built.
-- The two slips have the same data shape and identical shipped timings (`moves.slipLeft`, `moves.slipRight`).
-- `IsEvading` is true only during a slip's Active phase, and `EvadeSide` tells which side. Startup and Recovery are vulnerable. The Recovery is the slip's cost; cancelling it into a punch is the reward (counter).
-- Slip has no stamina cost in this task. Nothing punches the player yet, so `IsEvading`, `EvadeSide` and `IsBlocking` have no effect until opponent attacks exist.
-- **Deferred behaviour (built later with opponent attacks):** which slip side clears which incoming straight punch is **not decided here** (opponent-attack spec, with a boxing-consultant review [S2][S3]). Slips will not evade hooks when hooks are added [S3]. GAMEPLAY ABSTRACTION: the player picks the slip side with a key, and in this task the choice has no effect on any punch because there are none, instead of the side being the answer to a punch that is already coming [S2] — the opponent is idle.
-
-### Contact with the idle opponent (minimal)
-- On each Active tick of a punch, Core compares the gap (opponentX - player X) with that move's `reachM`. On the first Active tick where gap <= reach, the punch reports one `Contact` naming the move (LeftJab, RightJab, LeftCross or RightCross). A punch reports at most one contact. Out of range = no contact, no event.
-- With the shipped data both jabs share `jab` reach and both crosses share `cross` reach (the values are mirrored), so the hand never changes whether a punch lands in this task.
-- Contact is a rule on root positions, not mesh collision.
-- The adapter shows `Contact: Left Jab`, `Contact: Right Jab`, `Contact: Left Cross` or `Contact: Right Cross` as a screen `Label` near the top centre for `feedback.contactTextFrames` ticks (a newer contact replaces the text and restarts the timer) and writes one `GD.Print` line per contact.
-- **Deferred:** damage, health, scoring, opponent flinch or reaction, hit-stop, sound, blocking or slipping of the player's punches by the opponent, any difference in effect between the hands, and any use of the boxer stats or build.
+### Contact with the idle opponent (unchanged from #10)
+- On each Active tick of a punch, if (opponentX - player X) <= that move's `reachM`, the first such tick reports one `Contact` (Jab or Cross). At most one per punch. Root positions, not mesh collision.
+- The adapter shows `Contact: Jab` or `Contact: Cross` near the top centre for `feedback.contactTextFrames` ticks (a newer contact replaces it and restarts the timer) and one `GD.Print` line per contact. The text does not name the glove.
+- Deferred: damage, health, scoring, opponent reaction, hit-stop, sound, any stance effect.
 
 ### Idle opponent
-Unchanged. No AI. The opponent never moves, never punches, never changes state and never reacts to contact. It keeps the existing static guard pose (an optional gentle idle bob is allowed). The opponent is a fixed X value for Core; it has no `PlayerFighter` instance.
+Unchanged: no AI, never moves, punches or reacts. It is built in its chosen stance (mirrored build if southpaw) and keeps that static guard pose (optional idle bob). Core sees it only as a fixed X.
 
 ## Visuals (Godot adapter, game/)
-Thin adapter in `game/scripts` reads input, calls Core, and poses the existing fighter parts from `State`, `Phase` and `PhaseFrame` each frame. Code-driven motion only (no AnimationPlayer resources, no external assets, no shaders).
-- Stance: all fighters stand orthodox. The lead hand is `GloveL` (the glove on the lead-foot side, nearer the opponent); the rear hand is `GloveR`, nearer the camera. The stance does **not** change when the player throws with the right glove first or with the left glove's cross.
-- **Mirroring rule.** Each punch moves only its own glove and forearm (left: `ForearmL`/`GloveL`; right: the right forearm and `GloveR`); the other glove stays up in guard. The left and right versions of one punch use the same timing curve (startup out, hold through Active, return during Recovery) and the same `visual.punchExtendH`. Any torso turn of a left-glove punch is the same size as the right-glove version and in the opposite direction (the left shoulder comes forward instead of the right).
-- LeftJab: the left glove moves straight forward toward the opponent during Startup to `visual.punchExtendH`, holds through Active, returns to guard during Recovery. No torso turn. (This is the #10 jab, unchanged.)
-- RightJab: the right glove extends the same way; the shoulders turn by `visual.rearJabTurnDeg` toward the punch (right shoulder forward), so the rear glove, which starts further back, still visibly reaches at jab range. The turn is clearly smaller than a cross's so the right jab and the right cross look different.
-- RightCross: the right glove extends, and the torso, shoulders and head turn by up to `visual.crossTorsoTurnDeg` toward the punch (the #10 cross, unchanged).
-- LeftCross: the left glove extends, and the torso, shoulders and head turn by `visual.crossTorsoTurnDeg` in the opposite direction (left shoulder forward). The feet stay planted and the stance stays orthodox.
-- Guard: unchanged. Both gloves rise by `visual.guardGloveRaiseH` and move inward by `visual.guardGloveInwardW` over `guard.raiseFrames`; they drop back at once on release.
-- Slip: unchanged (see Slip).
-- Every move returns the parts exactly to the build's guard pose when the fighter is Idle (within 1 mm).
-- Visual tuning: `visual.punchExtendH` and `visual.rearJabTurnDeg` are tuned so that **each** of the four punches thrown at gap == its reach visibly reaches the opponent's head or gloves, and at gap > its reach visibly falls short. The developer may tune `visual.*` by about 30 percent for readability and records the final values in the data file.
+Thin adapter in `game/scripts` reads input, calls Core and poses the fighter parts from `State`, `Phase`, `PhaseFrame` **and the fighter's stance**. Code-driven motion only (no AnimationPlayer resources, no external assets, no shaders).
+- **Mirror rule.** The southpaw build and every southpaw punch/guard pose are the orthodox ones reflected across the boxer's own vertical facing plane (the plane through the root containing the facing direction and up). In practice: every boxer-sideways offset is multiplied by `MirrorSign`, every stance-dependent turn angle is multiplied by `MirrorSign`, and the roles of each L/R part pair swap. The developer applies this in the pure pose code (`GuardPose.Solve`, `PoseBlend.From` or equivalent in src/Core), not by scaling a node by -1 (a negative scale flips face winding and lighting).
+- **Build (both fighters).** Orthodox as today: `FootL` is the lead foot, forward by `body.stanceLeadFootForwardW`, and `GloveL` takes the lead-glove place of the guard. Southpaw: `FootR` leads by the same amount and `GloveR` takes the lead-glove place; any torso/head turn of the guard stance flips sign. Face cues still face the opponent; the player still faces +X and the opponent -X.
+- **Jab:** the lead glove and its forearm move straight toward the opponent during Startup to `visual.punchExtendH`, hold through Active, return during Recovery. No torso turn. The rear glove stays up.
+- **Cross:** the rear glove and its forearm extend the same way, and torso, shoulders and head turn by up to `visual.crossTorsoTurnDeg` bringing the **rear** shoulder forward (right shoulder in orthodox, left in southpaw: same size, opposite direction). Feet stay planted. The lead glove stays up.
+- **Guard:** unchanged, symmetric: both gloves rise by `visual.guardGloveRaiseH` and move inward by `visual.guardGloveInwardW` over `guard.raiseFrames`; drop at once on release.
+- **Slip:** unchanged (see Slip).
+- **Timing curves are identical** in both stances (same tick, same fraction of travel).
+- Every move returns all parts to the boxer's own guard pose (orthodox or southpaw) in Idle, within 1 mm.
+- Visual tuning: the developer may tune `visual.*` by about 30 percent so a punch at gap == its reach visibly reaches the opponent and at gap > reach visibly falls short, in both stances, and records the final values in the data file.
 
 ## Acceptance criteria
-AC1 to AC16 are xUnit tests in `tests/Core.Tests` (tick-exact, using the shipped `player-moves.json` and `fighters.json` text). AC17 to AC24 are checked by the headless smoke scene where practical (the smoke may drive input with `Input.ActionPress` / `ActionRelease`) and by the playtest. "Ticks" means `Tick` calls. "A slip" in a test means each of SlipLeft and SlipRight run separately; "a jab" means each of LeftJab and RightJab run separately; "a cross" means each of LeftCross and RightCross run separately, each with its own data entry's frame counts.
-- AC1. **Given** the shipped `data/balance/player-moves.json`, **when** parsed, **then** it has `tickRate`, moves `leftJab`, `rightJab`, `leftCross`, `rightCross`, `slipLeft`, `slipRight` with integer frame counts >= 1, positive `reachM` for the four punches, `guard`, `movement` and `feedback` blocks; **and given** a copy with a 0 or missing frame count, a non-positive speed or reach, a missing punch entry, an unknown `cancelInto` name (including the old names `jab` or `cross`), or a bound that excludes `ring.playerX`, **when** parsed, **then** it throws and the message names the bad key.
-- AC2. **Given** an Idle player, **when** LeftJab (or RightJab) is pressed on tick 1 and no other input follows, **then** the state is that jab's Startup for exactly its `startupFrames` ticks, Active for exactly `activeFrames`, Recovery for exactly `recoveryFrames`, and Idle on the next tick; the state names the correct hand on every tick.
-- AC3. **Given** an Idle player, **when** LeftCross (or RightCross) is pressed, **then** the same timeline holds with that cross's frame counts; **and** with the shipped data each cross's total ticks are greater than each jab's total and at most 1.5 times it; **and** `leftJab` and `rightJab` have identical frame counts and reach, as do `leftCross` and `rightCross` (mirrored).
-- AC4. **Given** an Idle player, **when** SlipLeft (or SlipRight) is pressed, **then** the timeline follows the `slipLeft` (or `slipRight`) frame counts, `IsEvading` is true on every Active tick and false on every other tick, and `EvadeSide` is Left (or Right) on every Active tick and none on every other tick.
-- AC5. **Given** a jab in Startup or Active, **when** any of the four punches or either slip is pressed, **then** nothing changes, and after the jab ends the fighter is Idle (the press was not buffered).
-- AC6. **Given** a LeftJab in Recovery, **when** RightCross is pressed, **then** on that same tick the state is RightCross Startup, frame 1, using the normal `rightCross` frame counts; **given** a RightJab in Recovery, **when** LeftCross is pressed, **then** on that tick the state is LeftCross Startup, frame 1; **and given** a jab pressed on tick 1 and the other hand's cross pressed on the first Recovery tick (tick 1 + `startupFrames` + `activeFrames`), **then** the fighter is Idle again exactly that cross's total ticks later; **and when**, in a jab's Recovery, the same hand's cross, either jab or either slip is pressed instead, **then** it is ignored and the jab runs to its end.
-- AC7. **Given** a cross (either hand) in any phase, **when** any of the four punches or either slip is pressed, **then** it is ignored and the cross runs to its end.
-- AC8. **Given** a SlipLeft or SlipRight in Recovery, **when** any one of the four punches is pressed, **then** on that same tick the state is that punch's Startup, frame 1 (tested once per punch per slip side); **and when** either slip key is pressed in that Recovery, **then** it is ignored; **and given** a slip in Startup or Active, **when** any punch or either slip key is pressed, **then** it is ignored and the slip keeps its side.
-- AC9. **Given** an Idle player, **when** guard is held, **then** the state is GuardRaising with `IsBlocking` false for exactly `guard.raiseFrames` ticks, then Guarding with `IsBlocking` true for as long as it is held; **and when** guard is released, **then** on that tick the state is Idle and `IsBlocking` is false.
-- AC10. **Given** Guarding, **when** any of the four punches is pressed, **then** it is ignored and the state stays Guarding; **and when** SlipLeft (or SlipRight) is pressed, **then** that slip starts that tick, and if guard is still held when the slip ends the state becomes GuardRaising, then Guarding.
-- AC11. **Given** Idle at `ring.playerX`, **when** forward is held for N ticks (no bound reached), **then** X increases by exactly N x `walkSpeedMps` / `tickRate` (within 1e-6); back decreases it the same way; both or neither held leaves X unchanged; while Guarding the change is multiplied by `guard.moveSpeedMultiplier`.
-- AC12. **Given** any of the four punches or a slip in any phase, **when** forward or back is held, **then** X does not change; **and when** the move ends with the key still held, **then** walking resumes on the free tick.
-- AC13. **Given** back held for 10 seconds of ticks, **then** X equals `movement.minX`; **given** forward held for 10 seconds of ticks, **then** X equals `ring.opponentX` - `movement.minSeparationM`; and X is never outside these bounds on any tick.
-- AC14. **Given** a gap <= the jab reach, **when** a LeftJab (or RightJab) runs to its end, **then** exactly one Contact naming that jab and hand is reported, on its first Active tick; **given** a gap between the jab reach and the cross reach, **then** neither jab reports a contact and a LeftCross (or RightCross) reports exactly one Contact naming that cross and hand; **given** a gap > the cross reach, **then** none of the four reports a contact.
-- AC15. **Given** Idle, **when** SlipLeft, SlipRight and all four punches are pressed on one tick, **then** SlipLeft starts; **when** SlipRight and all four punches, **then** SlipRight starts; **when** all four punches, **then** LeftJab starts; **when** RightJab, LeftCross and RightCross, **then** RightJab starts; **when** LeftCross and RightCross, **then** LeftCross starts; **given** a LeftJab in Recovery, **when** LeftCross and RightCross are pressed on one tick, **then** RightCross starts (the not-allowed press is dropped before the order applies); **when** guard is held and any punch is pressed on the same tick from Idle, **then** the state is GuardRaising and no punch starts.
-- AC16. **Given** a full fight sequence of any inputs, **when** ticked, **then** the opponent X used by Core never changes.
-- AC17. **Given** Character Select step 2, **when** the player confirms the opponent, **then** the ring loads with the player on the left and the controls hint (naming J / K jab, U / I cross) visible at the bottom, and the first D press moves the player toward the opponent with no delay or extra key.
-- AC18. **Given** the project is built, **when** project.godot is inspected, **then** `fight_forward` (D), `fight_back` (A), `fight_jab_left` (J), `fight_jab_right` (K), `fight_cross_left` (U), `fight_cross_right` (I), `fight_guard` (S), `fight_slip_left` (Q) and `fight_slip_right` (E) exist with physical keycodes, one key each; `fight_jab` and `fight_cross` do not exist; no two actions share a key; none of them uses Escape, Enter, keypad Enter, any arrow key or Space; and the menu actions (including code-registered `menu_left` / `menu_right`) are unchanged.
-- AC19. **Given** the fight, **when** J is held down for 2 seconds, **then** exactly one punch is thrown (key repeat ignored); the same holds for K, U, I, Q and E. **And when** A and D are held together, **then** the boxer does not move; **and when** an arrow key is pressed in the fight, **then** the boxer does not move.
-- AC20. **Given** the fight (smoke), **when** each punch reaches Active, **then** its own glove is further toward the opponent than in Idle by at least half of `visual.punchExtendH` x fighter height and the other glove has not moved forward (LeftJab and LeftCross move `GloveL`; RightJab and RightCross move `GloveR`); during RightCross Active and LeftCross Active the torso is turned by the same amount in opposite directions; during LeftJab Active the torso is not turned; during RightJab Active the torso turn is non-zero and smaller than during RightCross Active; while Guarding both gloves are higher than in Idle; during SlipLeft and SlipRight Active the `Head` is lower than in Idle, the SlipRight head is nearer the camera (greater Z) and the SlipLeft head further from it, the shoulders are turned in opposite directions, and the fighter root X and Z are unchanged; and back in Idle every posed part is within 1 mm of its built guard pose.
-- AC21. **Given** the player in range, **when** a punch makes contact, **then** `Contact: Left Jab`, `Contact: Right Jab`, `Contact: Left Cross` or `Contact: Right Cross` (matching the punch thrown) appears near the top of the screen and disappears after `feedback.contactTextFrames` ticks, and the opponent does not move, change pose or react.
-- AC22. **Given** the start position, **when** J, K, U or I is pressed without moving, **then** no contact text appears (the fighters start out of range); **and when** the player walks forward until stopped, **then** the player cannot pass the opponent and stops at the minimum separation.
-- AC23. **Given** the fight in any move state, **when** Escape is pressed, **then** the menu shows (as in main-menu.md); **and when** New Game and both picks are made again, **then** the player starts at `ring.playerX`, Idle, with no leftover contact text.
-- AC24. **Given** `Main.tscn` is launched directly (smoke, no select), **when** it runs, **then** the player is controllable with the default roster entry, a smoke-driven LeftJab and a smoke-driven RightCross each complete and return to Idle, and no error is logged.
+AC1 to AC18 are xUnit tests in `tests/Core.Tests` (tick-exact, using the shipped `player-moves.json` and `fighters.json` text). AC19 to AC30 are checked by the headless smoke scene where practical (it may drive input with `Input.ActionPress` / `ActionRelease`, and set `GameSession` stances directly) and by the playtest. "A slip" in a test means each of SlipLeft and SlipRight run separately. "In both stances" means the test runs once with Orthodox and once with Southpaw.
+
+**Move rules (as #10, data keys `jab` / `cross`)**
+- AC1. **Given** the shipped `player-moves.json`, **when** parsed, **then** it has `tickRate`, `stance.default` equal to `"orthodox"`, moves `jab`, `cross`, `slipLeft`, `slipRight` with integer frame counts >= 1, positive `reachM` for jab and cross, `guard`, `movement` and `feedback` blocks; **and given** a copy with a 0 or missing frame count, a non-positive speed or reach, a missing move, an unknown `cancelInto` name (including `leftJab`, `rightCross` or any other #12-draft name), a missing `stance.default` or a value other than `orthodox` / `southpaw`, or a bound that excludes `ring.playerX`, **when** parsed, **then** it throws and the message names the bad key.
+- AC2. **Given** an Idle player, **when** Jab is pressed on tick 1 and nothing else follows, **then** the state is Jab Startup for exactly `jab.startupFrames` ticks, Active for `activeFrames`, Recovery for `recoveryFrames`, and Idle on the next tick.
+- AC3. **Given** an Idle player, **when** Cross is pressed, **then** the same timeline holds with `cross` frame counts; **and** with the shipped data the cross total is greater than the jab total and at most 1.5 times it.
+- AC4. **Given** an Idle player, **when** SlipLeft (or SlipRight) is pressed, **then** the timeline follows its frame counts, `IsEvading` is true on every Active tick and false otherwise, and `EvadeSide` is Left (or Right) on every Active tick and none otherwise.
+- AC5. **Given** a Jab in Startup or Active, **when** Jab, Cross or either slip is pressed, **then** nothing changes, and after the jab ends the fighter is Idle (not buffered).
+- AC6. **Given** a Jab in Recovery, **when** Cross is pressed, **then** on that tick the state is Cross Startup, frame 1, with normal `cross` frame counts; **and given** Jab on tick 1 and Cross on the first Recovery tick (tick 1 + `startupFrames` + `activeFrames`), **then** the fighter is Idle exactly the cross total later; **and when** Jab or either slip is pressed in Jab Recovery instead, **then** it is ignored and the jab runs to its end.
+- AC7. **Given** a Cross in any phase, **when** Jab, Cross or either slip is pressed, **then** it is ignored and the cross runs to its end.
+- AC8. **Given** a slip in Recovery, **when** Jab (or Cross) is pressed, **then** on that tick the state is that punch's Startup, frame 1 (tested for both slip sides); **when** either slip is pressed in that Recovery, **then** it is ignored; **given** a slip in Startup or Active, **when** any punch or slip is pressed, **then** it is ignored and the slip keeps its side.
+- AC9. **Given** Idle, **when** guard is held, **then** GuardRaising with `IsBlocking` false for exactly `guard.raiseFrames` ticks, then Guarding with `IsBlocking` true while held; **when** released, **then** Idle that tick with `IsBlocking` false.
+- AC10. **Given** Guarding, **when** Jab or Cross is pressed, **then** it is ignored and the state stays Guarding; **when** a slip is pressed, **then** it starts that tick, and if guard is still held when it ends the state becomes GuardRaising, then Guarding.
+- AC11. **Given** Idle at `ring.playerX`, **when** forward is held N ticks (no bound reached), **then** X increases by exactly N x `walkSpeedMps` / `tickRate` (within 1e-6); back decreases it the same way; both or neither leaves X unchanged; while Guarding the change is multiplied by `guard.moveSpeedMultiplier`.
+- AC12. **Given** any punch or slip in any phase, **when** forward or back is held, **then** X does not change; **when** the move ends with the key held, **then** walking resumes on the free tick.
+- AC13. **Given** back held 10 seconds of ticks, **then** X equals `movement.minX`; forward held 10 seconds, **then** X equals `ring.opponentX` - `movement.minSeparationM`; X is never outside these bounds.
+- AC14. **Given** gap <= jab reach, **when** a Jab runs, **then** exactly one Contact Jab on its first Active tick; **given** jab reach < gap <= cross reach, **then** Jab reports none and Cross reports exactly one Contact Cross; **given** gap > cross reach, **then** neither reports.
+- AC15. **Given** Idle, **when** SlipLeft, SlipRight, Jab and Cross are pressed on one tick, **then** SlipLeft starts; SlipRight + Jab + Cross -> SlipRight; Jab + Cross -> Jab; **given** Jab Recovery, **when** Jab and Cross on one tick, **then** Cross starts; **when** guard is held and a punch pressed on the same tick from Idle, **then** GuardRaising and no punch.
+- AC16. **Given** any input sequence, **when** ticked, **then** the opponent X used by Core never changes.
+
+**Stance (pure logic)**
+- AC17. **Given** the stance helper, **when** queried, **then** Orthodox gives lead Left, rear Right, jab -> Left, cross -> Right, `MirrorSign` +1; Southpaw gives lead Right, rear Left, jab -> Right, cross -> Left, `MirrorSign` -1; **and given** the pure pose code (`GuardPose.Solve` / `PoseBlend.From` or equivalent) for the same build, **when** evaluated for every tick of Idle, Jab, Cross, GuardRaising and Guarding in both stances, **then** each southpaw part offset equals the orthodox offset of its L/R partner with the boxer-sideways component negated (within 1 mm) and each stance turn angle is negated (within 0.01 deg); **and** for SlipLeft and SlipRight the slip-specific offsets (dip, lean, slip turn) are identical in both stances.
+- AC18. **Given** a new `CharacterSelectFlow` with default Orthodox, **then** `PlayerStance` and `OpponentStance` are Orthodox; **when** `ToggleStance()` in `PickPlayer`, **then** `PlayerStance` becomes Southpaw and a second toggle returns it to Orthodox, and `OpponentStance` is unchanged; **when** the player confirms and the step is `PickOpponent`, **then** `OpponentStance` is the default and `ToggleStance()` changes only `OpponentStance`; **when** `Back()` from `PickOpponent`, **then** `PlayerStance` is kept and `OpponentStance` is back to the default; **when** `ToggleStance()` is called in `Done`, **then** it is rejected or does nothing (documented) and both stances are unchanged; **and** Jab/Cross timelines from AC2 and AC3 are the same whatever stance was chosen (`PlayerFighter` takes no stance).
+
+**Select screen and ring (smoke where practical, playtest)**
+- AC19. **Given** Character Select step 1, **when** it shows, **then** a stance line under the cards reads `Stance: Orthodox   (Up / Down to change)`; **when** Up is pressed, **then** it reads Southpaw; **when** Down is pressed, **then** Orthodox again; **when** Up is held about 2 seconds, **then** it changes exactly once; **when** the stance line is clicked, **then** it toggles and no card is confirmed; **and when** Left / Right move the highlight, **then** the stance does not change.
+- AC20. **Given** step 1 with Southpaw chosen, **when** Enter confirms Ghost, **then** step 2 shows `You: Mateo Rivera (Southpaw)` and its own stance line reads Orthodox; **when** Escape is pressed in step 2, **then** step 1 shows Ghost highlighted and the stance line reads Southpaw.
+- AC21. **Given** player Ghost Southpaw and opponent Anvil Orthodox are confirmed, **when** the ring loads, **then** the Tags read `YOU (Southpaw)` and `CPU (Orthodox)`; the player's `FootR` is further toward the opponent than its `FootL`; the opponent's `FootL` is further toward the player than its `FootR`; both still face each other with face cues toward each other, and all fighter-build checks of character-select.md (parts, colours, feet on the floor) still pass.
+- AC22. **Given** the project is built, **when** project.godot is inspected, **then** the `[input]` section is unchanged from main: `fight_forward` (D), `fight_back` (A), `fight_jab` (J), `fight_cross` (K), `fight_guard` (S), `fight_slip_left` (Q), `fight_slip_right` (E), with physical keycodes, one key each, none on Escape, Enter, keypad Enter, an arrow key or Space; no `fight_jab_left` / `fight_cross_right` or other #12-draft action exists; menu actions are unchanged.
+- AC23. **Given** the fight in either stance, **when** J (or K, Q, E) is held 2 seconds, **then** exactly one move starts; **when** A and D are held together, **then** no movement; **when** an arrow key is pressed, **then** no movement and no stance change.
+- AC24. **Given** an orthodox player (smoke), **when** Jab reaches Active, **then** `GloveL` is further toward the opponent than in Idle by at least half of `visual.punchExtendH` x fighter height, `GloveR` has not moved forward and the torso is not turned; **when** Cross reaches Active, **then** `GloveR` has moved forward the same way, `GloveL` has not, and the torso is turned with the right shoulder forward.
+- AC25. **Given** a southpaw player (smoke), **when** Jab reaches Active, **then** `GloveR` moves forward as in AC24 and `GloveL` does not, with no torso turn; **when** Cross reaches Active, **then** `GloveL` moves forward and `GloveR` does not, and the torso turn has the same size as the orthodox cross's and the opposite direction (left shoulder forward).
+- AC26. **Given** either stance, **when** Jab is pressed on tick 1 and Cross on the first Jab Recovery tick, **then** the cross starts that tick (one-two) and the fighter is Idle after the same total ticks as in orthodox; the glove that leads the combo is the lead glove of that stance.
+- AC27. **Given** either stance (smoke), **when** SlipLeft and SlipRight reach Active, **then** `Head` is lower than in Idle, the SlipRight head is nearer the camera (greater Z) and the SlipLeft head further from it (for the player), the shoulders turn in opposite directions, root X and Z are unchanged; **and when** Jab or Cross is pressed in slip Recovery, **then** that punch starts with the stance's correct glove; **and** while Guarding both gloves are higher than in Idle; **and** back in Idle every posed part is within 1 mm of that stance's guard pose.
+- AC28. **Given** the player in range, **when** a punch makes contact, **then** `Contact: Jab` or `Contact: Cross` (matching the punch, whatever the stance) appears near the top and disappears after `feedback.contactTextFrames` ticks; the opponent does not move or react. **Given** the start position, **when** J or K is pressed, **then** no contact text appears; walking forward stops at the minimum separation.
+- AC29. **Given** the fight in any move state, **when** Escape is pressed, **then** the menu shows; **when** New Game is chosen again, **then** step 1's stance line reads `stance.default` (Orthodox), and after picks the player starts at `ring.playerX`, Idle, with no leftover contact text.
+- AC30. **Given** `Main.tscn` is launched directly (smoke, no select), **when** it runs, **then** both fighters use the first roster entry and `stance.default` (Tags read `(Orthodox)`), a smoke-driven Jab and Cross each complete and return to Idle, and no error is logged.
 
 ## Balance values
-All numbers live in `data/balance/player-moves.json` (plus the existing positions in `data/balance/fighters.json`), not in this spec or in code.
-Pointer: `data/balance/player-moves.json` -> `tickRate`; `moves.leftJab|rightJab|leftCross|rightCross|slipLeft|slipRight.startupFrames|activeFrames|recoveryFrames|cancelInto`; `moves.leftJab|rightJab|leftCross|rightCross.reachM`; `guard.raiseFrames`, `guard.moveSpeedMultiplier`; `movement.walkSpeedMps`, `movement.minX`, `movement.minSeparationM`; `feedback.contactTextFrames`; `visual.punchExtendH`, `visual.crossTorsoTurnDeg`, `visual.rearJabTurnDeg` (new), `visual.guard*`, `visual.slip*` (developer may tune about 30 percent for readability). `data/balance/fighters.json` -> `ring.playerX`, `ring.opponentX`.
-Changes in #12: `moves.jab` and `moves.cross` were renamed and duplicated into the four hand entries with the **same numbers** (left and right of one punch type are mirrored); `cancelInto` lists use the new names; `visual.rearJabTurnDeg` was added. The boxing review kept the numbers equal per hand (no allowed source gives per-hand timings). If a later task wants a per-hand difference, only the data file changes, preferably damage or power rather than ticks; the code and these rules stay the same.
-Parsing and validation happen in Core (text in, exception on bad data); the adapter only reads the file. The file must be included in the exported build, as with fighters.json.
+All numbers live in `data/balance/player-moves.json` (plus positions and body proportions in `data/balance/fighters.json`), not in this spec or in code.
+Pointer: `data/balance/player-moves.json` -> `tickRate`; `stance.default` (new); `moves.jab|cross|slipLeft|slipRight.startupFrames|activeFrames|recoveryFrames|cancelInto`; `moves.jab|cross.reachM`; `guard.raiseFrames`, `guard.moveSpeedMultiplier`; `movement.walkSpeedMps`, `movement.minX`, `movement.minSeparationM`; `feedback.contactTextFrames`; `visual.punchExtendH`, `visual.crossTorsoTurnDeg`, `visual.guard*`, `visual.slip*`. `data/balance/fighters.json` -> `ring.playerX`, `ring.opponentX`, `body.stanceLeadFootForwardW`, `body.stanceFootSpreadW`.
+Changes in #12 against main: only the `stance` block was added (and comments updated). `moves.jab` / `moves.cross`, their numbers and all `cancelInto` lists are as on main. There is no per-stance number: a southpaw uses the same values mirrored. A later per-stance difference (for example power) would be data-only.
+Parsing and validation in Core; the adapter only reads the file, which must be in the exported build.
 
 ## Boxing notes
-The #10 notes were reviewed by boxing-consultant on 2026-11-28 (work/10/boxing-review.md), and the #12 additions on the same date (work/12/boxing-review.md); see Boxing review outcome (#12). Sources are in docs/boxing/sources.md.
+#10 notes reviewed by boxing-consultant on 2026-11-28 (work/10/boxing-review.md); the #12 4-key review (work/12/boxing-review.md) is partly superseded by this rescope; the stance version needs a fresh review (see Boxing questions). Sources: docs/boxing/sources.md.
 
 ### Real boxing this spec relies on
-- The jab is the lead-hand straight punch and the cross is the rear-hand straight punch, in either stance; in an orthodox stance the left hand and left foot lead, so `GloveL` is the lead, and a southpaw is the mirror [S1][S3][S10]. This is why LeftJab and RightCross are the "natural" orthodox pair and the #10 moves map onto them unchanged.
-- The cross has farther to travel than the jab and gets its power and extra reach from the rear-leg push and the hip and torso rotation [S1][S3][S10]; the jab relies mainly on the front-leg push with slight torso involvement [S10]. The metre values for reach are tuning values, not measured.
-- The jab then cross (the "one-two") is a basic combination taught as lead straight then rear straight, which justifies the LeftJab -> RightCross cancel [S1][S2][S3]. Punches thrown in a combination are delivered faster than a single maximal punch [S4].
-- In real boxing only the punching hand leaves the guard while the other hand stays up and the punching hand returns along the same line [S1][S2]. This supports a jab cancelling into the **other** hand's cross while the punching hand returns; the ban on same-hand follow-ups is a scope choice, not a boxing rule (see the abstraction lines).
-- A slip moves the head off the line of an incoming straight punch and is followed at once by a counter with both hands free, which justifies Slip Recovery -> punch cancel [S2][S3]. The side of the slip depends on the incoming punch [S2].
-- A high guard and a tighter cover with both forearms in front protect the head against straight punches [S1][S2][S3].
-- Real timing scale: throw to first contact about 0.11 to 0.14 s for jab and cross [S6]; a whole punch about 0.4 to 0.5 s [S5][S6]; contact about 0.02 to 0.03 s [S7]. No allowed source gives real slip durations.
+- Orthodox means the left hand and left foot lead; southpaw is the mirror, with the right hand and right foot leading [S10][S3].
+- The jab is the lead-hand straight and the cross the rear-hand straight, in either stance; the names follow the hand's role, not left or right [S10][S1][S3]. So a southpaw jabs with the right glove and crosses with the left.
+- The cross has farther to travel than the jab and gets its power from the rear-leg push and hip and torso rotation [S1][S3][S10]; the jab relies mainly on the front-leg push with slight torso involvement [S10]. Reach values are tuning values, not measured.
+- The one-two is taught as lead straight then rear straight, which justifies the jab -> cross cancel [S1][S2][S3]. Combination punches are delivered faster than a single maximal punch [S4].
+- Only the punching hand leaves the guard while the other stays up, and the punching hand returns along the same line [S1][S2].
+- A slip moves the head off the line of an incoming straight punch and is followed at once by a counter [S2][S3]; the slip side depends on the incoming punch [S2].
+- A high guard and a tighter forearm cover protect the head against straight punches [S1][S2][S3].
+- Trained boxers can throw the basic punches from both stances; in S10 the same boxers did so, and stance changed punch force (jab higher in southpaw, cross higher in orthodox in that sample) but not fist acceleration [S10].
+- Real timing scale: throw to first contact about 0.11 to 0.14 s for jab and cross [S6]; a whole punch about 0.4 to 0.5 s [S5][S6]; contact about 0.02 to 0.03 s [S7].
 
 ### GAMEPLAY ABSTRACTION lines
-New in #12 (reviewed):
-GAMEPLAY ABSTRACTION: the player can throw a jab-speed straight with the rear hand (right jab) and a rotating straight with the lead hand (left cross) from an orthodox stance instead of the jab being the lead hand's punch and the cross the rear hand's, in either stance [S10][S1][S3] — client request for a choice of hand on both punches; no allowed source names either punch.
-GAMEPLAY ABSTRACTION: the left and right version of each punch share the same ticks and reach instead of lead and rear hands differing in travel and force [S1][S3][S7] — no allowed source gives per-hand timings, and fist acceleration did not differ by stance [S10]; per-hand tuning is data-only later.
-GAMEPLAY ABSTRACTION: the stance never changes when the player uses the right glove first instead of switching to southpaw to lead with the right hand [S10] — stance switching is out of scope.
-GAMEPLAY ABSTRACTION: the mirrored one-two (RightJab -> LeftCross) is allowed instead of only lead straight then rear straight [S1][S2][S3] — keeps the two hands symmetrical; removable by data (`rightJab.cancelInto`).
-GAMEPLAY ABSTRACTION: a jab cannot cancel into a same-hand cross or another jab instead of real combinations that repeat a hand, such as the double jab [S1][S3] — M1 has few moves; same-hand repeats come later.
-GAMEPLAY ABSTRACTION: any of the four punches may cancel a slip's Recovery regardless of slip side instead of a counter chosen for the slip and the incoming punch [S2][S3] — no opponent attacks yet.
-GAMEPLAY ABSTRACTION: the left cross and right jab torso turns are mirrored or scaled visual choices instead of described body actions [S10] — readability from the side-on camera.
+New in #12 (stance):
+GAMEPLAY ABSTRACTION: stance is a free menu choice made before the fight and fixed for the whole fight instead of a stance the boxer can change during a bout [S10] — simple controls; an in-fight switch is a later task.
+GAMEPLAY ABSTRACTION: stance changes no timing, reach or power instead of changing punch force by punch type [S10] — one readable rule set; stance effects can be data-only later.
+GAMEPLAY ABSTRACTION: the southpaw build and punch poses are an exact mirror of the orthodox ones (including the cross torso turn) instead of each boxer's own movement in each stance [S10] — readability; S10 defines the stance as a mirror but does not describe the body action as an exact reflection.
+GAMEPLAY ABSTRACTION: any boxer may be either stance, with no link to handedness or the boxer's stats, instead of a boxer's own trained stance — client request for a free choice; stats are display-only.
 
 Carried from #10 (reviewed):
 GAMEPLAY ABSTRACTION: jab and cross use fixed tick timings chosen for rhythm instead of measured durations (throw about 0.1 s, whole punch about 0.4 to 0.5 s [S5][S6]) — a readable startup/active/recovery beat; the jab total is deliberately quicker than real.
-GAMEPLAY ABSTRACTION: the cross is a bit slower and heavier than the jab (total about 1.4 times) instead of nearly equal in speed [S4][S5][S6] — gives the cross a risk-versus-reward cost; the gap is kept small because real speeds are close.
-GAMEPLAY ABSTRACTION: slip timings are tuning values instead of measured durations (none exist in the allowed sources; a generous evade window fits [S4]) — a clear, learnable window. Slip-left and slip-right share the same timings.
+GAMEPLAY ABSTRACTION: the cross is a bit slower and heavier than the jab (total about 1.4 times) instead of nearly equal in speed [S4][S5][S6] — gives the cross a risk-versus-reward cost; the gap is small because real speeds are close.
+GAMEPLAY ABSTRACTION: slip timings are tuning values instead of measured durations (none in the allowed sources; a generous evade window fits [S4]) — a clear, learnable window. Both sides share timings.
 GAMEPLAY ABSTRACTION: reach is a root-to-root distance (jab shorter than cross) instead of arm length, stance and step length [S1][S3] — one readable range rule.
 GAMEPLAY ABSTRACTION: the boxer cannot step while punching or slipping instead of stepping with the punch [S9] — committed moves and simple controls.
-GAMEPLAY ABSTRACTION: held guard is a separate committed state with no punching, instead of punching out of the guard with the free hand kept up [S1][S2] — gives guard a clear cost and keeps the moves distinct.
-GAMEPLAY ABSTRACTION: the idle pose is the stance guard and "Guard" is a tighter cover with a short raise instead of one continuous guard that is always up [S1][S3] — a visible state the player controls.
+GAMEPLAY ABSTRACTION: held guard is a separate committed state with no punching instead of punching out of the guard with the free hand kept up [S1][S2] — gives guard a clear cost.
+GAMEPLAY ABSTRACTION: the idle pose is the stance guard and "Guard" is a tighter cover with a short raise instead of one continuous guard [S1][S3] — a visible state the player controls.
 GAMEPLAY ABSTRACTION: the slip side is a free key choice and the head moves toward or away from the camera with an added shoulder turn, instead of a lateral head move chosen in answer to the incoming punch [S2] — the camera only sees depth, and the opponent has no attacks yet.
-GAMEPLAY ABSTRACTION: a slip is a committed move with its own startup, evade window and recovery, with no step or lateral root movement, instead of a head movement not tied to fixed frame counts [S2] — readable timing and simple controls.
-GAMEPLAY ABSTRACTION: the only chains are jab -> other-hand cross and slip -> punch instead of the wider set such as the double jab, jab to the body and hooks [S1][S3] — M1 has few moves; combos come later.
+GAMEPLAY ABSTRACTION: a slip is a committed move with its own startup, evade window and recovery, with no step, instead of a head movement not tied to fixed frame counts [S2] — readable timing.
+GAMEPLAY ABSTRACTION: the only chains are jab -> cross and slip -> punch, with no double jab, instead of a wider set such as the double jab, body jab and hooks [S1][S3] — M1 has few moves; same-hand repeats and combos come later. (The ban on a same-hand repeat is a scope choice, not a boxing rule.)
 GAMEPLAY ABSTRACTION: walking is a smooth glide along one axis instead of step-and-drag footwork and pivots [S1][S8] — roadmap M1 limits footwork.
-GAMEPLAY ABSTRACTION: all boxers are orthodox with identical reach and timings instead of southpaws and varied builds [S3] — stats are display-only until combat tuning.
-GAMEPLAY ABSTRACTION: a punch "contact" is a distance check on root positions with no target, damage or reaction instead of a glove landing on a head or body [S7] — the opponent is idle in this task.
+GAMEPLAY ABSTRACTION: both stances share identical reach and timings for every build instead of varied builds and styles [S3] — stats are display-only until combat tuning.
+GAMEPLAY ABSTRACTION: a punch "contact" is a distance check on root positions with no target, damage or reaction instead of a glove landing [S7] — the opponent is idle.
 GAMEPLAY ABSTRACTION: no input buffering and no cancel out of Startup or Active instead of a boxer adapting a punch mid-flight — readable, mash-proof rhythm (vision pillar).
 
 ### Boxing review outcome (#10)
-Kept for the record; decisions taken on work/10/boxing-review.md.
+Kept for the record; decisions on work/10/boxing-review.md.
 
 | # | Suggestion | Decision | Reason |
 |---|---|---|---|
-| C1 | Narrow the jab/cross gap | **Accepted.** Cross 26 ticks against the jab's 18 (ratio 1.44). | Real startups are nearly equal [S6]; the cross still feels a bit heavier. AC3 caps the ratio at 1.5. |
+| C1 | Narrow the jab/cross gap | **Accepted.** Cross 26 ticks against the jab's 18 (ratio 1.44). | Real startups are nearly equal [S6]; AC3 caps the ratio at 1.5. |
 | C2 | Shorter cross startup when it follows a jab | **Rejected for M1.** | The cancel already skips the rest of the jab's recovery. |
-| C3 | Remove rotation as the reason the cross is slower, and the slip "bend" claim | **Accepted.** | Rotation is the source of power and reach [S1][S3], not a proven cause of lower speed. |
-| C4 | Only the punching hand leaves the guard | **Accepted.** | Stated with [S1][S2]; closed-both-hands guard is an abstraction line. |
+| C3 | Remove rotation as the reason the cross is slower | **Accepted.** | Rotation is the source of power [S1][S3], not a proven cause of lower speed. |
+| C4 | Only the punching hand leaves the guard | **Accepted.** | [S1][S2]. |
 | Slip direction | One slip for both punches? | **Superseded** by two slips; side-to-punch mapping deferred. | [S2] |
 
-### Boxing review outcome (#12)
-Decisions taken on work/12/boxing-review.md (boxing-consultant, 2026-11-28). No numbers, keys or tick timings changed.
-- **Jab and cross follow the hand's role** (lead or rear), not left or right, in either stance [S10]. Added to the first Boxing notes bullet.
-- **Right jab, left cross, mirrored one-two, mirrored torso turns, any-punch-after-slip:** no allowed source names or rules them out. All stay as GAMEPLAY ABSTRACTION lines above. The right jab and left cross are game inventions; the mirrored one-two can be removed by data if playtest shows confusion.
-- **Equal timings and reach per hand:** kept. No source gives per-hand timings; a later difference should be damage or power, not ticks [S7][S10].
-- **Cross rotation claim:** [S8] removed, [S10] added (S8 does not describe trunk rotation as the source of power).
-- **Same-hand follow-up ban:** reworded as a scope and readability choice, not a boxing rule. A double jab may come in a later task.
-- **Orthodox for everyone:** accepted. A later "switch stance" task is the realistic route; if added, punches must be named by lead and rear, not left and right, so the glove-based names (LeftJab, RightCross) would need a rename or stance-aware label [S10].
-- **Evidence limit:** S1 to S3 could not be re-read as text in this review, so they are cited only for claims already reviewed in #10. A double-jab and southpaw statement in the coach manuals is not re-verified.
+### Carried from the #12 4-key review (still valid after the rescope)
+- Jab and cross follow lead and rear, not left and right, in either stance [S10] (work/12/boxing-review.md finding 1, 8). This rescope follows that recommendation.
+- [S8] is not cited for cross rotation (finding 18).
+- The no-double-jab rule is worded as a scope choice (finding 11).
+- Findings on right jab, left cross, mirrored one-two and four-punch slip cancels no longer apply (those moves were removed).
+
+### Boxing questions (for boxing-consultant)
+1. Are the stance definitions above (orthodox = left hand and foot lead; southpaw = mirror) correctly cited to [S10][S3]? Does S3 cover southpaw, or only orthodox?
+2. Is it correct to state that in southpaw the jab is the right (lead) hand and the cross the left (rear) hand, with the one-two as right jab then left cross [S10][S1][S2]?
+3. Is the cross torso turn as a mirror (rear shoulder forward: left shoulder in southpaw) acceptable as stated, or should it stay only an abstraction line as written?
+4. Is a per-boxer stance chosen in Character Select, for both the player and the opponent, a fair model as a pre-fight choice? Is there anything in the allowed sources about boxers having a trained or preferred stance that the free-choice abstraction line should mention?
+5. Is the line "trained boxers can throw the basic punches from both stances" a fair reading of [S10], given that its sample was 30 right-handed trained boxers?
+6. With a southpaw, slip-left (Q) is toward the rear-hand side. Is there any real-boxing claim needed here now, or does it stay deferred to the opponent-attack spec?
+7. Orthodox versus southpaw mismatches (for example lead feet lining up) are not modelled at all, since the opponent is idle. Any objection to leaving that unmentioned until opponent attacks exist?
 
 ## Out of scope
-- Stamina, health, damage, KO, knockdowns, round timer display or round end, points decision, scoring.
-- Opponent AI or any opponent movement, punches, blocking, slipping, reaction or flinch.
-- Any difference in effect between the left and right hand (damage, power, accuracy). In this task the hand changes only which glove moves and the contact text.
-- Southpaw stance, switching stance, choosing a stance in Character Select.
-- Hooks, uppercuts, body shots, feints, double jab or other same-hand repeats, two-glove punches, clinches, lateral or depth movement of the boxer's root, pivots.
-- Deciding which slip side evades which punch (deferred to the opponent-attack spec).
+- **In-fight stance switch** (a later task), and any switch during Character Select other than the toggle described.
+- Any stance effect on timing, reach, power, damage, stamina, accuracy or AI.
+- Per-boxer default stance in the roster, handedness, saving the last stance choice.
+- Rear-hand jab, lead-hand cross, mirrored one-two, separate left/right punch keys (the rejected 4-key design).
+- Stamina, health, damage, KO, knockdowns, round timer display or round end, scoring.
+- Opponent AI or any opponent movement, punches, blocking, slipping, reaction.
+- Hooks, uppercuts, body shots, feints, double jab or other same-hand repeats, clinches, lateral or depth root movement, pivots, footwork changes for southpaw beyond the mirrored stance.
+- Deciding which slip side evades which punch.
 - Use of boxer stats or build in moves.
-- Hit-stop, camera shake, particles, sound, shaders, HUD beyond the contact text and controls hint.
-- Gamepad, mouse controls in the fight, rebinding, pause menu, settings, keeping the old `fight_jab` / `fight_cross` names as aliases.
-- Input buffering, combos beyond the cancel rules above.
-- Any code or tests (this is a spec; the developer and QA do those).
+- Hit-stop, camera shake, particles, sound, shaders, HUD beyond the contact text, controls hint, stance line and stance in the Tag.
+- Gamepad, mouse in the fight, rebinding, pause, settings, new InputMap actions.
+- Input buffering; combos beyond the cancel rules above.
+- Any code or tests (this is a spec).
 
 ## Client decisions
-Made by the client at G2 of #10 (2026-11-28) and still in force:
-1. **Guard stays on S** (hold).
-2. **Two slip moves, slip-left and slip-right.** Keys Q and E; sides are the boxer's own left and right.
-3. **Walking is A / D only.** The arrow keys are not used for any fight action.
-4. **Boxer-relative sides are kept.** Q = the boxer's left = away from the camera, E = the boxer's right = toward the camera. This spec applies the same rule to the gloves.
+Made at G2 of #10 (2026-11-28), still in force:
+1. Guard stays on S (hold).
+2. Two slips, Q and E; sides are the boxer's own left and right.
+3. Walking is A / D only; arrow keys are not fight keys.
+4. Boxer-relative sides are kept (Q = boxer's left, E = boxer's right) in both stances.
 
-### Client decisions needed (G2 of #12)
-1. **Punch keys.** Proposed: J = left jab, K = right jab, U = left cross, I = right cross (columns = glove, rows = jab on the home row and cross above). This keeps J as the left jab but **moves the right cross from K to I**, so the old J-then-K one-two becomes J-then-I. **Alternative A:** crosses on the home row and jabs above (U = left jab, I = right jab, J = left cross, K = right cross): keeps K as the right cross but moves the left jab from J to U. **Alternative B:** keep J = left jab and K = right cross exactly, and put the two new punches on L = right jab and H = left cross: no muscle-memory change, but the keys no longer match the glove side or the punch type. **Recommendation:** the proposed grid, because it is the only layout where both "which side" and "which punch" can be read off the key position.
+Made at G2 of #12 (2026-11-28):
+5. Two punch keys only: J = jab (lead hand), K = cross (rear hand). The 4-key design is dropped.
+6. Stance per boxer, chosen in Character Select (orthodox or southpaw); southpaw is mirrored; no in-fight switch.
 
 ## Open questions
-1. **Which slip side beats which punch** is still deferred (opponent-attack spec, with a boxing review).
-2. **Per-hand tuning:** the boxing review kept equal numbers per hand. If playtest asks for a difference, it is a later, data-only change (damage or power preferred over ticks) plus AC3's "mirrored" clause.
+1. **Stance control:** proposed Up / Down (existing actions, no new key) plus a click on the stance line. Alternative: Tab as a dedicated stance key (one new code-registered action). Recommendation: Up / Down, because Left / Right already move between cards, so Up / Down reads as "change the other setting", and it adds no key.
+2. **Default stance:** both steps start on Orthodox (`stance.default`). Alternative: a per-boxer default in the roster (for example Ghost starts southpaw). Not proposed, to keep stance a pure player choice.
+3. Which slip side beats which punch: still deferred (opponent-attack spec).
 
 ## Playtest checklist
 Five things the client checks by hand at G3.
-1. Pick both boxers: the ring appears with a controls hint at the bottom naming J / K for jabs and U / I for crosses. Hold D: your boxer (left, "YOU") glides toward the opponent and stops a short distance in front of it. Hold A: it backs away. Holding A and D together does not move it, and the arrow keys do nothing.
-2. Walk close and press J, then K, then U, then I, waiting for each to finish: J and U move the glove further from the camera, K and I the glove nearer the camera, and the top text says "Contact: Left Jab", "Contact: Right Jab", "Contact: Left Cross", "Contact: Right Cross" in that order. From the starting distance none of the four shows any "Contact" text.
-3. Compare K (right jab) with I (right cross), and J (left jab) with U (left cross): each cross turns the body clearly more and feels a bit slower and heavier than the jab of the same glove; the left cross turns the body the opposite way to the right cross. Only the punching glove moves; the other glove stays up.
-4. Press J then quickly I: the right cross follows the left jab smoothly as a one-two; K then quickly U does the same with the hands swapped. Press J then quickly U (same glove), or J then K: the second punch does not fire. Mash all four punch keys: the boxer never throws faster than the moves allow, and holding any punch key throws only one punch.
-5. Hold S: both gloves come up, the boxer walks more slowly, and none of J, K, U, I does anything until you let go. Press Q or E: the upper body dips and leans to that side; press any of J, K, U or I right as the slip comes back and that punch fires out of it. Press Escape at any moment: you are back at the menu, and a new fight starts fresh.
+1. Click New Game: under the two cards a line reads "Stance: Orthodox (Up / Down to change)". Press Up: it says Southpaw; press Down: Orthodox; clicking the line also flips it, and Left / Right still only move the card highlight. Pick Southpaw and confirm Ghost: step 2 shows "You: Mateo Rivera (Southpaw)" and its own stance line starts on Orthodox.
+2. Leave the opponent on Orthodox and confirm Bruno: in the ring the tags read "YOU (Southpaw)" and "CPU (Orthodox)", and the two boxers stand as mirror images in their footing: your right foot is forward, the opponent's left foot is forward.
+3. As the southpaw, walk close with D and press J: the glove nearer the camera (your right) shoots out and "Contact: Jab" shows. Press K: the other glove (your left) shoots out, the body turns with the left shoulder coming forward, it feels a bit slower and heavier, and "Contact: Cross" shows. From the starting distance neither shows any "Contact" text.
+4. Press J then quickly K: the cross follows the jab smoothly as a one-two. Mash J and K: the boxer never punches faster than the moves allow, and holding a key throws only one punch. Hold S: gloves come up, walking slows, and J and K do nothing until you let go. Press Q or E: the upper body dips to that side (E toward the camera), and J or K pressed right as it comes back fires out of it.
+5. Press Escape, start a New Game and keep both boxers on Orthodox: everything works as before, J now throws the left glove (further from the camera) and K the right glove with the right shoulder turning, with the same rhythm as the southpaw fight. Escape in step 2 brings back step 1 with your stance kept.

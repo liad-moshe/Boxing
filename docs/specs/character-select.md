@@ -1,6 +1,6 @@
 # Spec: Character select
 
-Status: DRAFT   Issue: #5   (look revised after client feedback: fighters must read as human boxers; pending client G2)
+Status: DRAFT   Issue: #5   (look revised after client feedback: fighters must read as human boxers; pending client G2)   Amended by #12: stance choice per step (see "Amendment for #12: stance" below; full rules and ACs in docs/specs/player-controls.md)
 
 ## Goal
 After New Game, let the player choose a boxer for themself and a boxer for the AI opponent from a roster of exactly 2, seeing each boxer's stats while browsing, then show the ring with both fighters standing ready. This gives the game its first player choice and the data foundation for later combat.
@@ -57,7 +57,7 @@ Same rules as the main menu, with the 2 cards as items (index 0 and 1) and horiz
 | ui_back | Escape | Existing. Per the Escape table above. Ignores key repeat. |
 | (mouse) | Hover / left click | Control mouse signals, no InputMap action. |
 
-No clash with docs/kb/input-map.md (menu_up and menu_down stay for the main menu; they do nothing on this screen). menu_left and menu_right are registered in code at startup (game/scripts/InputActions.EnsureRegistered), not in project.godot, so no project.godot edit is required. The developer lists both in docs/kb/input-map.md, noting they are code-registered.
+No clash with docs/kb/input-map.md (menu_up and menu_down stay for the main menu; **since #12 they toggle the stance on this screen**, see the amendment below). menu_left and menu_right are registered in code at startup (game/scripts/InputActions.EnsureRegistered), not in project.godot, so no project.godot edit is required. The developer lists both in docs/kb/input-map.md, noting they are code-registered.
 
 ## Visual description (code-built, no external assets)
 - Control nodes in code, same style constants approach as the menu: dark background, header `Label` at top, two cards side by side centred.
@@ -88,6 +88,15 @@ No clash with docs/kb/input-map.md (menu_up and menu_down stay for the main menu
   - `CharacterSelectFlow`: step (`PickPlayer`, `PickOpponent`, `Done`), `Confirm(fighterId)`, and `Back()` returning `GoToMenu`, `GoToPlayerStep` or `Stay`. Exposes `PlayerId` and `OpponentId`.
 - Godot side: a static `GameSession` (or equivalent) in `game/` holds `PlayerId` and `OpponentId`. Select writes both before changing scene to `Main.tscn`. `Main` reads them in `_Ready` and builds the fighters. If nothing was set (smoke test, direct launch of the ring), both default to the first roster entry. `GameSession` is cleared when returning to the menu.
 - The data file must be readable at runtime in the editor and in the exported build (developer to verify it is included in the export).
+
+## Amendment for #12: stance
+Spec change made for issue #12. The authoritative rules and the acceptance criteria (AC17 to AC21, AC29, AC30) are in docs/specs/player-controls.md, section "Stance choice (Character Select)". Summary of what changes on this screen:
+- Each step has one **stance line** under the cards: `Stance: Orthodox   (Up / Down to change)` (or Southpaw). It sets the stance of the boxer picked in that step, whatever card is highlighted.
+- **Up / Down** (existing `menu_up` / `menu_down`, fresh press only) or a left click on the stance line toggle Orthodox <-> Southpaw. The line takes no keyboard focus and a click on it confirms nothing. No new key or InputMap action.
+- Both steps start on `stance.default` from `data/balance/player-moves.json` (orthodox). Confirm stores pick and stance. Step 2 shows `You: <name> (<stance>)`.
+- Escape from step 2 keeps the player's pick and stance; discards the opponent's. Escape to the menu (from step 1 or the ring) discards all.
+- `CharacterSelectFlow` gains `PlayerStance`, `OpponentStance`, `ToggleStance()`; `GameSession` gains `PlayerStance`, `OpponentStance` (default `stance.default` on direct launch).
+- Ring: the fighter `Tag` text becomes `YOU (<stance>)` / `CPU (<stance>)` (AC16 and playtest item 4 of this spec now read "YOU" and "CPU" as the start of the tag). A southpaw fighter is built as the mirror of the orthodox build: `FootR` leads by `body.stanceLeadFootForwardW` and `GloveR` takes the lead-glove place. All part names, colours and AC24 to AC28 checks are unchanged.
 
 ## Acceptance criteria
 AC1 to AC10 and AC29 are xUnit tests in `tests/Core.Tests`. AC24 to AC28 are checked by the headless smoke test (node names, colours, measured positions) plus the playtest. The rest are checked in the running game (playtest, headless smoke where practical).
